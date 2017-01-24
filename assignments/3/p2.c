@@ -4,9 +4,31 @@
 #include<assert.h>
 #include<stdbool.h>
 
-void *ListNew()
+void *ListAdd(void *list, char *str)
 {
-    void *list = malloc(sizeof(void *));
+    int strLen = strlen(str);
+    if (list == NULL)
+    {
+        list = malloc(sizeof(void *) + strLen + 1);
+        assert(list != NULL);
+        *(void **)list = NULL;
+        memcpy((char *)list + sizeof(void *), str, strLen + 1);
+        return list;
+    }
+
+    void *currentNode = list;
+    void *previousNode = NULL;
+    while(currentNode != NULL) {
+        previousNode = currentNode;
+        currentNode = *(void **)currentNode;
+    }
+
+    *(void **)previousNode = malloc(sizeof(void *) + strLen + 1);
+    void *newNode = *(void **)previousNode;
+    assert(newNode != NULL);
+    *(void **)newNode = NULL;
+    memcpy((char *)newNode + sizeof(void *), str, strLen + 1);
+
     return list;
 }
 
@@ -21,7 +43,7 @@ bool ListDispose(void *list)
 
     while (currentNode != NULL)
     {
-        memcpy(nodeAddrs, &currentNode, sizeof(void *));
+        memcpy((char *)nodeAddrs + count * sizeof(void *), &currentNode, sizeof(void *));
         count++;
         nodeAddrs = realloc(nodeAddrs, (count + 1) * sizeof(void *));
         currentNode = *(void **)currentNode;
@@ -34,28 +56,6 @@ bool ListDispose(void *list)
     }
 
     return true;
-}
-
-void ListAdd(void *list, char *str)
-{
-    int strLen = strlen(str);
-    if (list == NULL)
-    {
-        list = malloc(sizeof(void *) + strLen + 1);
-        assert(list != NULL);
-        *(char **)list = NULL;
-        memcpy((char *)list + sizeof(void *), str, strLen + 1);
-        return ;
-    }
-
-    void *currentNode = list;
-    while(currentNode != NULL)
-        currentNode = *(void **)currentNode;
-
-    currentNode = malloc(sizeof(void *) + strLen + 1);
-    assert(currentNode !=NULL);
-    *(void **)currentNode = NULL;
-    memcpy((char *)currentNode + sizeof(void *), str, strLen + 1);
 }
 
 int *serializeList(const void *list)
@@ -74,11 +74,12 @@ int *serializeList(const void *list)
 
     while(currentNode != NULL)
     {
-        char *val = (char *)currentNode + sizeof(int);
+        char *val = (char *)currentNode + sizeof(void *);
 
         int valLen = strlen(val);
         count = realloc(count, currentLen + valLen + 1);
         assert(count != NULL);
+        (*count)++;
 
         void *tail = (char *)count + currentLen;
         memcpy(tail, val, valLen + 1);
@@ -91,15 +92,44 @@ int *serializeList(const void *list)
 
 int main(void)
 {
-    void *list = ListNew();
-    ListAdd(list, "Red");
-    ListAdd(list, "Yellow");
-    ListAdd(list, "Pink");
-    ListAdd(list, "Green");
-    ListAdd(list, "Purple");
+    void *list = NULL;
+    list = ListAdd(list, "Red");
+    list = ListAdd(list, "Yellow");
+    list = ListAdd(list, "Pink");
+    list = ListAdd(list, "Green");
+    list = ListAdd(list, "Purple");
 
     int *serialized = serializeList(list);
     printf("the length of list is: %d\n", *serialized);
+
+    char *val = (char *)serialized + sizeof(int);
+    int count = 0;
+    int index = 0;
+
+    while(true)
+    {
+        char cur = val[index];
+
+        if (cur == '\0')
+        {
+            count ++;
+            printf("\n");
+
+            if (count == 5) break;
+            index ++;
+            continue;
+        }
+
+        printf("%c", cur);
+        index ++;
+    }
+
+    ListDispose(list);
+
+    void *emptyList = NULL;
+    int *serializedEmptyList = serializeList(emptyList);
+    printf("%d\n", *serializedEmptyList);
+    ListDispose(emptyList);
+
     return 0;
 }
-
