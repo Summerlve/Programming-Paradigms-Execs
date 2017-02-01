@@ -1,10 +1,11 @@
 #include<string.h>
 #include<stdlib.h>
 #include<assert.h>
+#include<stdio.h>
 
 typedef int (*MultiTableHashFunction)(const void *keyAddr, int numBuckets);
 typedef int (*MultiTableCompareFunction)(const void *keyAddr1, const void *keyAddr2);
-typedef int (*MultiTableMapFunction)(void *keyAddr, void *valueAddr, void *auxData);
+typedef void (*MultiTableMapFunction)(const void *keyAddr, void *valueAddr, void *auxData);
 typedef void (*HashSetMapFunction)(void *curElemAddr);
 
 typedef struct {
@@ -125,13 +126,14 @@ void MultiTableNew(multitable *mt, int keySizeInBytes, int valueSizeInBytes, int
 void MultiTableEnter(multitable *mt, const void *keyAddr, const void *valueAddr)
 {
     hashset *hs = &mt->mappings;
+
     int compare;
     void *curElemAddr;
 
     for (int i = 0; i < HashSetLength(hs); i++)
     {
         curElemAddr = HashSetNth(hs, i);
-        compare = memcmp(curElemAddr, keyAddr, mt->keySize);
+        compare = hs->compare(curElemAddr, keyAddr);
 
         if (compare == 0) break;
     }
@@ -144,7 +146,7 @@ void MultiTableEnter(multitable *mt, const void *keyAddr, const void *valueAddr)
 
         void *value = malloc(hs->elemSize);
         memcpy(value, keyAddr, mt->keySize);
-        memcpy((char *)value + mt->keySize, valueAddr, mt->valueSize);
+        memcpy((char *)value + mt->keySize, &v, sizeof(vector));
         HashSetAppend(hs, value);
     }
 
@@ -155,13 +157,74 @@ void MultiTableEnter(multitable *mt, const void *keyAddr, const void *valueAddr)
     }
 }
 
-
 void MultiTableMap(multitable *mt, MultiTableMapFunction map, void *auxData)
 {
+    hashset *hs = &mt->mappings;
+    for (int i = 0; i < HashSetLength(hs); i++)
+    {
+        void *curElem = HashSetNth(hs, i);
+        void *keyAddr = curElem;
+        vector *v = (vector *)((char *)curElem + mt->keySize);
 
+        for (int j = 0; j < VectorLength(v); j++)
+        {
+            void *valueAddr = VectorNth(v, j);
+            map(keyAddr, valueAddr, auxData);
+        }
+    }
+}
+
+int hash(const void *keyAddr, int numBuckets)
+{
+    return 1;
+}
+
+int compare(const void *keyAddr1, const void *keyAddr2)
+{
+    int key1, key2;
+    memcpy(&key1, keyAddr1, sizeof(int));
+    memcpy(&key2, keyAddr2, sizeof(int));
+
+    return key1 - key2;
+}
+
+void map(const void *keyAddr, void *valueAddr, void *auxData)
+{
+    int key;
+    memcpy(&key, keyAddr, sizeof(int));
+
+    char value;
+    memcpy(&value, valueAddr, sizeof(char));
+
+    printf("auxData is: %d\n", *(int *)auxData);
+    printf("key is: %d\n", key);
+    printf("value is: %c\n", value);
+    (*(int *)auxData)++;
 }
 
 int main(void)
 {
-   return 0;
+    multitable mt;
+    MultiTableNew(&mt, sizeof(int), sizeof(char), sizeof(int), hash, compare);
+
+    int key1 = 1;
+    char value11 = 'a';
+    char value12 = 'b';
+    char value13 = 'c';
+
+    int key2 = 2;
+    char value21 = 'd';
+    char value22 = 'e';
+    char value23 = 'f';
+
+    MultiTableEnter(&mt, &key1, &value11);
+    MultiTableEnter(&mt, &key1, &value12);
+    MultiTableEnter(&mt, &key1, &value13);
+    MultiTableEnter(&mt, &key2, &value21);
+    MultiTableEnter(&mt, &key2, &value22);
+    MultiTableEnter(&mt, &key2, &value23);
+
+    int auxData = 1;
+    MultiTableMap(&mt, map, &auxData);
+    return 0;
 }
