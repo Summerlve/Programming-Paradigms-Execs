@@ -103,6 +103,8 @@ void SSADispose(sparsestringarray *ssa)
         free(curBitmap);
         VectorDispose(&(ssa->groups[i].strings), stringDispose);
     }
+
+    free(ssa->groups);
 }
 
 bool SSAInsert(sparsestringarray *ssa, int index, const char *str)
