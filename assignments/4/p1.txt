@@ -1,0 +1,25 @@
+// line 1
+R1 = M[SP + 4];
+R1 = .2M[R1];
+R2 = SP + 20;
+R2 = R1 + R2;
+R2 = .1M[R2];
+R2 = R2 * 2;
+R1 = M[SP + 4];
+R1 = R1 + R2;
+M[SP + 4] = R1;
+
+// line 2
+R1 = M[SP + 12];
+R1 = R1 + 4;
+M[R1] = 400;
+
+// line 3
+R1 = SP + 8;
+SP = SP - 4;
+M[SP] = R1;
+CALL <pixar>
+SP = SP + 4;
+R1 = M[RV];
+RV = R1 + 160;
+RET;
