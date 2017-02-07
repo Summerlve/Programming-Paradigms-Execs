@@ -1,0 +1,31 @@
+// line 1
+R1 = M[SP + 4];
+R2 = .2 M[R1];
+R2 = R2 * 2;
+R3 = R1 + R2;
+M[R3] = .2 0;
+
+// line 2
+R1 = M[SP + 8];
+R2 = M[R1 + 12];
+R3 = M[R2 + 4];
+R4 = R3 * 16;
+R5 = R1 + R4;
+M[SP + 8] = R5;
+
+// line 3
+R1 = SP + 8;
+SP = SP - 4;
+M[SP] = R1;
+CALL <AskingQuestions>;
+SP = SP + 4;
+RET;
+
+// assembly code -> c code
+struct human h;
+struct human *hp;
+h.doug = h.emmyjo[0];
+if (heroes == NULL)
+    hp = &hp[1];
+return &hp + 3;
+
