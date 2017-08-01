@@ -1,0 +1,23 @@
+R1 = M[SP + 8];
+R2 = .2 M[R1];
+R3 = M[SP + 4];
+M[R3 + 60] = .1 R2;
+
+R1 = M[SP + 4];
+R2 = R1 + 20;
+R2 = M[R2];
+R3 = R2 + 68;
+R4 = M[R3];
+M[R3] = R4 + 960;
+
+R1 = M[SP + 8];
+R2 = R1 + 4;
+R3 = M[SP + 4];
+R4 = R3 + 48;
+SP = SP - 8;
+M[SP] = R4;
+M[SP + 4] = R2;
+CALL <washburn>
+SP = SP + 8;
+RV = M[RV];
+RET;
