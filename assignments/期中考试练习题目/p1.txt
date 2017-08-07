@@ -1,0 +1,26 @@
+SP = SP - 24;
+
+R1 = M[SP];
+R2 = M[R1 + 24];
+R3 = .2 M[SP + 32];
+R4 = SP + 52;
+R4 = R3 + R4;
+R5 = .1 M[R4];
+M[R4] = .1 R5 + R2;
+
+R1 = M[SP + 24];
+M[R1 + 16] = 0;
+
+R1 = SP + 4;
+R2 = SP + 60;
+SP = SP - 8;
+M[SP] = R2;
+M[SP + 4] = R1;
+CALL <dinnerisserved>
+SP = SP + 8;
+R3 = RV;
+R3 = R3 + 8;
+RV = R3;
+
+SP = SP + 24;
+RET;
