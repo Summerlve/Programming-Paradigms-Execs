@@ -1,0 +1,15 @@
+a.
+指令一次只能处理32bits，而M[x] = M[y] + M[z]需要超过32bits的空间，超出了一条指令的范围，所以是办不到的。
+
+b.
+把spc放在bottom是不行的，因为caller不知道callee需要给局部变量申请多少空间。
+把spc放在top有些情况可以，有些情况不行。
+    当被调用的函数的参数固定的情况下，callee知道实参和局部变量所需的内存大小，因此spc可以放在top
+    当函数使用可变参数：...的时候，callee不知道实参的情况，也就无法准确分配内存，spc不能放在top
+
+c.
+static bool IsLittleEndian()
+{
+    int one = 1;
+    return ((*(char *)&one) == 1);
+}
