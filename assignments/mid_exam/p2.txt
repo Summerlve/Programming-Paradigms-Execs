@@ -1,0 +1,24 @@
+a.
+#define kInitAllocation 64
+#define EntrySize(elemSize) (sizeof(bool) + elemSize)
+#define NthEntry(elems, index, elemSize) ((char *)elems + index * EntrySize(elemSize))
+
+void HashSetNew(hashset *hs, int elemSize,
+                HashSetHashFunction hashfn,
+                HashSetCompareFunction cmpfn,
+                HashSetFreeFunction freefn)
+{
+    hs->hashfn = hashfn;
+    hs->cmpfn = cmpfn;
+    hs->freefn = freefn;
+    hs->alloclength = kInitAllocation;
+    hs->count = 0;
+    hs->elems = malloc(EntrySize(elemSize) * kInitAllocation);
+    hs->elemSize = elemSize;
+
+    for(int i = 0; i < hs->alloclength; i++)
+    {
+        *(bool *)NthEntry(hs->elems, i, elemSize) = false;
+    }
+}
+
