@@ -1,14 +1,25 @@
-#include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <string.h>
 
 bool traceFlag;
+typedef struct {
+    int logicalLength;
+    int allocatedLength;
+    void *threadPtrs;
+} ThreadPool;
+ThreadPool threadPool;
 void InitThreadPackage(bool traceFlag);
-void ThreadNew(const char *debugName, void (*func)(), int nArg, ...);
+void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...);
 void ThreadSleep(int microSecs);
 const char *ThreadName(void);
 void RunAllThreads(void);
 struct SemaphoreImplementation {
-
+    sem_t __semaphore__;
+    const char *debugName;
 };
 typedef struct SemaphoreImplementation *Semaphore;
 Semaphore SemaphoreNew(const char *debugName, int initialValue);
