@@ -13,22 +13,40 @@ void InitThreadPackage(bool traceFlag)
 void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
 {
     pthread_t p;
-    pthread_create(&p, NULL, func, )
+
+    // expand the threadPtrs
+    if (threadPool.logicalLength == threadPool.allocatedLength)
+    {
+        threadPool.threadPtrs = realloc(threadPool.threadPtrs, 
+                                        sizeof(pthread_t *) * threadPool.allocatedLength * 2);
+        threadPool.allocatedLength *= 2;
+    }
+
+    *((pthread_t **)&threadPool.threadPtrs[threadPool.logicalLength]) = &p;
+    threadPool.logicalLength ++;
 }
 
 void ThreadSleep(int microSecs)
 {
-
+    struct timespec sleeper;
+    sleeper.tv_sec = 0;
+    sleeper.tv_nsec = microSecs * 10e6L; // micro secs 2 nano secs 
+    nanosleep(&sleeper, NULL);
 }
 
 const char *ThreadName(void)
 {
-
+    return "";
 }
 
 void RunAllThreads(void)
 {
-
+    for(int i = 0; i < threadPool.logicalLength; i++)
+    {
+        pthread_t cur = *(pthread_t **)(&threadPool.threadPtrs[i]);
+        pthread_create(cur, )    
+    
+    }
 }
 
 Semaphore SemaphoreNew(const char *debugName, int initialValue)

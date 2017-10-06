@@ -4,14 +4,18 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <string.h>
+#include <time.h>
 
 bool traceFlag;
-typedef struct {
+typedef struct ThreadInfo {
+    
+};
+struct ThreadPool{
     int logicalLength;
     int allocatedLength;
-    void *threadPtrs;
-} ThreadPool;
-ThreadPool threadPool;
+    pthread_t **threadPtrs;
+} threadPool;
+ ;
 void InitThreadPackage(bool traceFlag);
 void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...);
 void ThreadSleep(int microSecs);
