@@ -7,13 +7,16 @@
 #include <time.h>
 
 bool traceFlag;
-typedef struct ThreadInfo {
-    
-};
+typedef struct {
+    const char *debugName;
+    void *(*func)(void *);
+    int nArg;
+    void **args;
+} ThreadInfo ;
 struct ThreadPool{
     int logicalLength;
     int allocatedLength;
-    pthread_t **threadPtrs;
+    ThreadInfo *threadInfos;
 } threadPool;
  ;
 void InitThreadPackage(bool traceFlag);

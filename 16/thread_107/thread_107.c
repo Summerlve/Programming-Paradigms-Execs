@@ -4,25 +4,28 @@ traceFlag = true;
 
 void InitThreadPackage(bool traceFlag)
 {
-    traceFlag = traceFlag;    
+    traceFlag = traceFlag;
     threadPool.logicalLength = 0;
-    threadPool.allocatedLength = 4; 
-    threadPool.threadPtrs = malloc(sizeof(pthread_t *) * threadPool.allocatedLength);
+    threadPool.allocatedLength = 4;
+    threadPool.threadInfos = malloc(sizeof(pthread_t *) * threadPool.allocatedLength);
 }
 
 void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
 {
-    pthread_t p;
-
-    // expand the threadPtrs
+    // expand the threadInfos
     if (threadPool.logicalLength == threadPool.allocatedLength)
     {
-        threadPool.threadPtrs = realloc(threadPool.threadPtrs, 
-                                        sizeof(pthread_t *) * threadPool.allocatedLength * 2);
+        threadPool.threadInfos = realloc(threadPool.threadInfos,
+                                        sizeof(ThreadInfo) * threadPool.allocatedLength * 2);
         threadPool.allocatedLength *= 2;
     }
 
-    *((pthread_t **)&threadPool.threadPtrs[threadPool.logicalLength]) = &p;
+    ThreadInfo t_info;
+    t_info.debugName = debugName;
+    t_info.func = func;
+    t_info.nArg = nArg;
+
+    threadPool.threadInfos
     threadPool.logicalLength ++;
 }
 
@@ -30,10 +33,11 @@ void ThreadSleep(int microSecs)
 {
     struct timespec sleeper;
     sleeper.tv_sec = 0;
-    sleeper.tv_nsec = microSecs * 10e6L; // micro secs 2 nano secs 
+    sleeper.tv_nsec = microSecs * 10e6L; // micro secs 2 nano secs
     nanosleep(&sleeper, NULL);
 }
 
+// macOS can not get name of single thread.
 const char *ThreadName(void)
 {
     return "";
@@ -43,9 +47,9 @@ void RunAllThreads(void)
 {
     for(int i = 0; i < threadPool.logicalLength; i++)
     {
-        pthread_t cur = *(pthread_t **)(&threadPool.threadPtrs[i]);
-        pthread_create(cur, )    
-    
+        pthread_t cur = *(pthread_t **)(&threadPool.threadInfos[i]);
+        pthread_create(cur, )
+
     }
 }
 
@@ -76,4 +80,3 @@ void SemaphoreFree(Semaphore s)
 {
     sem_destroy(&(s->__semaphore__));
 }
-
