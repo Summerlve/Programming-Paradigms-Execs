@@ -7,11 +7,12 @@ void InitThreadPackage(bool traceFlag)
     traceFlag = traceFlag;
     threadPool.logicalLength = 0;
     threadPool.allocatedLength = 4;
-    threadPool.threadInfos = malloc(sizeof(pthread_t *) * threadPool.allocatedLength);
+    threadPool.threadInfos = malloc(sizeof(threadInfo) * threadPool.allocatedLength);
 }
 
 void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
 {
+    // variable-argument function, only accepts pointer as non-name argument.
     // expand the threadInfos
     if (threadPool.logicalLength == threadPool.allocatedLength)
     {
@@ -25,8 +26,18 @@ void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
     t_info.func = func;
     t_info.nArg = nArg;
 
-    threadPool.threadInfos
+    threadPool.threadInfos = realloc(sizeof(threadInfo) * (threadPool.logicalLength + 1));
     threadPool.logicalLength ++;
+
+    t_info.args = malloc(nArg * sizeof(void *));
+    va_list ap;
+    va_start(ap, nArg);
+    for (int i = 0; i < nArg; i++)
+    {
+        void *v = va_arg(ap, void *);
+        memcpy(&((void **)args)[i], &v, sizeof(void *));
+    }
+    va_end(ap);
 }
 
 void ThreadSleep(int microSecs)
@@ -40,16 +51,25 @@ void ThreadSleep(int microSecs)
 // macOS can not get name of single thread.
 const char *ThreadName(void)
 {
-    return "";
+    pthread_t tid = pthread_self();
+
+    for (int i = 0; i < threadPool.logicalLength; i++)
+    {
+        ThreadInfo t_info = threadPool.threadInfos[i];
+        if (t_info.tid = tid) return t_info.debugName;
+    }
+
+    return NULL;
 }
 
 void RunAllThreads(void)
 {
-    for(int i = 0; i < threadPool.logicalLength; i++)
+    for (int i = 0; i < threadPool.logicalLength; i++)
     {
-        pthread_t cur = *(pthread_t **)(&threadPool.threadInfos[i]);
-        pthread_create(cur, )
-
+        pthread_t tid;
+        ThreadInfo t_info = threadPool.threadInfos[i];
+        t_info.tid = tid;
+        pthread_create(tid, NULL, t_info.func, t_info.args);
     }
 }
 
