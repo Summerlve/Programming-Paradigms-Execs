@@ -35,7 +35,7 @@ void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
     for (int i = 0; i < nArg; i++)
     {
         void *v = va_arg(ap, void *);
-        memcpy(&((void **)args)[i], &v, sizeof(void *));
+        memcpy(&((void **)t_info.args)[i], &v, sizeof(void *));
     }
     va_end(ap);
 }

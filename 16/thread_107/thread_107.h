@@ -1,5 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
 #include <pthread.h>
 #include <semaphore.h>
@@ -7,7 +5,7 @@
 #include <time.h>
 #include <stdarg.h>
 
-bool traceFlag;
+extern bool traceFlag;
 
 typedef struct {
     const char *debugName;
