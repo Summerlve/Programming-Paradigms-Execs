@@ -1,13 +1,15 @@
 #include "thread_107.h"
 
-traceFlag = true;
+// default value of traceFlag is true.
+bool traceFlag = true;
 
-void InitThreadPackage(bool traceFlag)
+void InitThreadPackage(bool flag)
 {
-    traceFlag = traceFlag;
+    extern bool traceFlag;
+    traceFlag = flag;
     threadPool.logicalLength = 0;
     threadPool.allocatedLength = 4;
-    threadPool.threadInfos = malloc(sizeof(threadInfo) * threadPool.allocatedLength);
+    threadPool.threadInfos = malloc(sizeof(ThreadInfo) * threadPool.allocatedLength);
 }
 
 void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
@@ -26,7 +28,7 @@ void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
     t_info.func = func;
     t_info.nArg = nArg;
 
-    threadPool.threadInfos = realloc(sizeof(threadInfo) * (threadPool.logicalLength + 1));
+    threadPool.threadInfos = realloc(threadPool.threadInfos, sizeof(ThreadInfo) * (threadPool.logicalLength + 1));
     threadPool.logicalLength ++;
 
     t_info.args = malloc(nArg * sizeof(void *));

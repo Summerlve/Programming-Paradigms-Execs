@@ -4,6 +4,7 @@
 #include <string.h>
 #include <time.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 extern bool traceFlag;
 
