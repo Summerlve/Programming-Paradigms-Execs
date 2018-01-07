@@ -35,10 +35,10 @@ struct SemaphoreImplementation {
 
 typedef struct SemaphoreImplementation *Semaphore;
 Semaphore SemaphoreNew(const char *debugName, int initialValue);
-const char *SemaphoreName(Semaphore s);
-void SemaphoreWait(Semaphore s);
-void SemaphoreSignal(Semaphore s);
-void SemaphoreFree(Semaphore s);
+const char *SemaphoreName(Semaphore s); // get semaphore's debugName
+void SemaphoreWait(Semaphore s); // semaphore -1
+void SemaphoreSignal(Semaphore s); // semaphore +1
+void SemaphoreFree(Semaphore s); // free semaphore
 void AcquireLibraryLock(void);
 void ReleaseLibraryLock(void);
 #define PROTECT(code) {     \\

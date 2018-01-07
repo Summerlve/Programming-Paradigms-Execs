@@ -14,7 +14,8 @@ void InitThreadPackage(bool flag)
 
 void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
 {
-    // variable-argument function, only accepts pointer as non-name argument.
+    // variable-argument function, only accepts pointer(actually void *) as non-name arguments.
+
     // expand the threadInfos
     if (threadPool.logicalLength == threadPool.allocatedLength)
     {
@@ -46,7 +47,7 @@ void ThreadSleep(int microSecs)
 {
     struct timespec sleeper;
     sleeper.tv_sec = 0;
-    sleeper.tv_nsec = microSecs * 10e6L; // micro secs 2 nano secs
+    sleeper.tv_nsec = microSecs * 10e6L; // micro secs convert to nano secs
     nanosleep(&sleeper, NULL);
 }
 
@@ -68,10 +69,12 @@ void RunAllThreads(void)
 {
     for (int i = 0; i < threadPool.logicalLength; i++)
     {
+        // printf("123123123\n");
         pthread_t tid;
         ThreadInfo t_info = threadPool.threadInfos[i];
         t_info.tid = tid;
-        pthread_create(tid, NULL, t_info.func, t_info.args);
+        t_info.func((void *)0);
+        pthread_create(&tid, NULL, t_info.func, t_info.args);
     }
 }
 
