@@ -6,14 +6,12 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-extern bool traceFlag;
-
 typedef struct {
     const char *debugName;
-    pthread_t tid;
     void *(*func)(void *);
-    int nArg;
     void *args;
+    int nArg;
+    pthread_t tid;
 } ThreadInfo;
 
 struct ThreadPool{

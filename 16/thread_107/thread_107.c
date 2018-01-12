@@ -25,12 +25,19 @@ void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
     }
 
     ThreadInfo t_info;
-    t_info.debugName = debugName;
+    t_info.debugName = malloc(strlen(debugName) + 1);
+    strcpy(t_info.debugName, debugName);
     t_info.func = func;
     t_info.nArg = nArg;
 
-    threadPool.threadInfos = realloc(threadPool.threadInfos, sizeof(ThreadInfo) * (threadPool.logicalLength + 1));
+    memcpy(&(threadPool.threadInfos[threadPool.logicalLength]), &t_info, sizeof(ThreadInfo));
     threadPool.logicalLength ++;
+
+    if (nArg == 0)
+    {
+        t_info.args = NULL;
+        return ;
+    }
 
     t_info.args = malloc(nArg * sizeof(void *));
     va_list ap;
@@ -45,10 +52,12 @@ void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
 
 void ThreadSleep(int microSecs)
 {
-    struct timespec sleeper;
-    sleeper.tv_sec = 0;
-    sleeper.tv_nsec = microSecs * 10e6L; // micro secs convert to nano secs
-    nanosleep(&sleeper, NULL);
+    struct timespec sleeper =
+    { 
+        .tv_sec = microSecs / 1000,
+        .tv_nsec = (microSecs % 1000) * 10e6L
+    };
+    if (nanosleep(&sleeper, NULL) != 0) perror("sleep error");
 }
 
 // macOS can not get name of single thread.
@@ -69,12 +78,11 @@ void RunAllThreads(void)
 {
     for (int i = 0; i < threadPool.logicalLength; i++)
     {
-        // printf("123123123\n");
         pthread_t tid;
         ThreadInfo t_info = threadPool.threadInfos[i];
         t_info.tid = tid;
-        t_info.func((void *)0);
-        pthread_create(&tid, NULL, t_info.func, t_info.args);
+        pthread_create(&tid, NULL, t_info.func, NULL);
+        pthread_join(tid, NULL);
     }
 }
 
