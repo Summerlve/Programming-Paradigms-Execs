@@ -29,10 +29,7 @@ void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
     strcpy(t_info.debugName, debugName);
     t_info.func = func;
     t_info.nArg = nArg;
-
-    memcpy(&(threadPool.threadInfos[threadPool.logicalLength]), &t_info, sizeof(ThreadInfo));
-    threadPool.logicalLength ++;
-
+ 
     if (nArg == 0)
     {
         t_info.args = NULL;
@@ -45,9 +42,12 @@ void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
     for (int i = 0; i < nArg; i++)
     {
         void *v = va_arg(ap, void *);
-        memcpy(&((void **)t_info.args)[i], &v, sizeof(void *));
+        memcpy(&(((void **)t_info.args)[i]), &v, sizeof(void *));
     }
     va_end(ap);
+
+    memcpy(&(threadPool.threadInfos[threadPool.logicalLength]), &t_info, sizeof(ThreadInfo));
+    threadPool.logicalLength ++;
 }
 
 void ThreadSleep(int microSecs)
@@ -81,17 +81,19 @@ void RunAllThreads(void)
         pthread_t tid;
         ThreadInfo t_info = threadPool.threadInfos[i];
         t_info.tid = tid;
-        pthread_create(&tid, NULL, t_info.func, NULL);
-        pthread_join(tid, NULL);
+        pthread_create(&tid, NULL, t_info.func, t_info.args);
+        // pthread_join will block thread who called him, restart the thread when joined thread finished.
+        // pthread_join(tid, NULL);
     }
 }
 
 Semaphore SemaphoreNew(const char *debugName, int initialValue)
 {
-    struct SemaphoreImplementation sem;
-    sem_init(&(sem.__semaphore__), 0, initialValue);
-    sem.debugName = debugName;
-    return &sem;
+    Semaphore sem = malloc(sizeof(struct SemaphoreImplementation));
+    sem_init(&(sem->__semaphore__), 0, initialValue);
+    sem->debugName = malloc(strlen(debugName) + 1);
+    strcpy(sem->debugName, debugName);
+    return sem;
 }
 
 const char *SemaphoreName(Semaphore s)
