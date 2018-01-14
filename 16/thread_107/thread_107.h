@@ -1,10 +1,5 @@
-#include <stdbool.h>
 #include <pthread.h>
 #include <semaphore.h>
-#include <string.h>
-#include <time.h>
-#include <stdarg.h>
-#include <stdio.h>
 
 typedef struct {
     const char *debugName;
@@ -27,7 +22,7 @@ const char *ThreadName(void);
 void RunAllThreads(void);
 
 struct SemaphoreImplementation {
-    sem_t __semaphore__;
+    sem_t *__semaphore__;
     const char *debugName;
 };
 

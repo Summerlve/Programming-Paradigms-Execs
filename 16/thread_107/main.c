@@ -14,6 +14,8 @@ void *test_1(void *args)
 
     fputs("test_1\n", stdout);
     SemaphoreSignal(done);
+
+    return NULL;
 }
 
 void *test_2(void *args)
@@ -28,6 +30,8 @@ void *test_2(void *args)
 
     fputs("test_2\n", stdout);
     SemaphoreSignal(done);
+    
+    return NULL;
 }
 
 void *test_3(void *args)
@@ -42,6 +46,8 @@ void *test_3(void *args)
 
     fputs("test_3\n", stdout);
     SemaphoreSignal(done);
+    
+    return NULL;
 }
 
 void *test_4(void *args)
@@ -56,6 +62,8 @@ void *test_4(void *args)
 
     fputs("test_4\n", stdout);
     SemaphoreSignal(done);
+
+    return NULL;
 }
 
 void *test_5(void *args)
@@ -67,9 +75,11 @@ void *test_5(void *args)
     SemaphoreWait(canIGiveYouSomeMoney);
     *total_money += 5;
     SemaphoreSignal(canIGiveYouSomeMoney);
-    
+
     fputs("test_5\n", stdout);
     SemaphoreSignal(done);
+    
+    return NULL;
 }
 
 int main(int argc, char **argv)
@@ -77,6 +87,7 @@ int main(int argc, char **argv)
     InitThreadPackage(false);
 
     Semaphore done = SemaphoreNew("done", 0); 
+    int doneValue = 0;
     Semaphore canIGiveYouSomeMoney = SemaphoreNew("canIGiveYouSomeMoney", 1);
 
     int *totoal_money = malloc(sizeof(int));

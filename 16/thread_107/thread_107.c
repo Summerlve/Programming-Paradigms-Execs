@@ -1,3 +1,11 @@
+#include <fcntl.h>
+#include <stdbool.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <string.h>
+#include <time.h>
+#include <stdarg.h>
+#include <stdio.h>
 #include "thread_107.h"
 
 // default value of traceFlag is true.
@@ -82,15 +90,16 @@ void RunAllThreads(void)
         ThreadInfo t_info = threadPool.threadInfos[i];
         t_info.tid = tid;
         pthread_create(&tid, NULL, t_info.func, t_info.args);
-        // pthread_join will block thread who called him, restart the thread when joined thread finished.
-        // pthread_join(tid, NULL);
     }
 }
 
 Semaphore SemaphoreNew(const char *debugName, int initialValue)
 {
     Semaphore sem = malloc(sizeof(struct SemaphoreImplementation));
-    sem_init(&(sem->__semaphore__), 0, initialValue);
+    // sem_init is not available in macOS, use sem_open instead it.
+    sem_t *__semaphore__;
+    if (__semaphore__ = sem_open(debugName, O_CREAT, 0644, initialValue) == SEM_FAILED) perror("sem_open error");
+    sem->__semaphore__ = __semaphore__;  
     sem->debugName = malloc(strlen(debugName) + 1);
     strcpy(sem->debugName, debugName);
     return sem;
@@ -103,15 +112,15 @@ const char *SemaphoreName(Semaphore s)
 
 void SemaphoreWait(Semaphore s)
 {
-    sem_wait(&(s->__semaphore__));
+    if (sem_wait(s->__semaphore__) != 0) perror("sem_wait error");
 }
 
 void SemaphoreSignal(Semaphore s)
 {
-    sem_post(&(s->__semaphore__));
+    if (sem_post(s->__semaphore__) != 0) perror("sem_post error");
 }
 
 void SemaphoreFree(Semaphore s)
 {
-    sem_destroy(&(s->__semaphore__));
+    if(sem_close(s->__semaphore__) != 0) perror("sem_close error");
 }
