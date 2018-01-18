@@ -44,15 +44,21 @@ void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
         return ;
     }
 
-    t_info.args = malloc(nArg * sizeof(void *));
+    t_info.args = malloc((nArg + 1) * sizeof(void *));
+ 
     va_list ap;
     va_start(ap, nArg);
+    
     for (int i = 0; i < nArg; i++)
     {
         void *v = va_arg(ap, void *);
-        memcpy(&(((void **)t_info.args)[i]), &v, sizeof(void *));
+        memcpy(&(((void **)t_info.args)[i+1]), &v, sizeof(void *));
     }
     va_end(ap);
+
+     // copy 'this' to t_info.args[0].
+    ThreadInfo *this = &(threadPool.threadInfos[threadPool.logicalLength]);
+    memcpy(t_info.args, &this, sizeof(ThreadInfo *));
 
     memcpy(&(threadPool.threadInfos[threadPool.logicalLength]), &t_info, sizeof(ThreadInfo));
     threadPool.logicalLength ++;
@@ -87,9 +93,9 @@ void RunAllThreads(void)
     for (int i = 0; i < threadPool.logicalLength; i++)
     {
         pthread_t tid;
-        ThreadInfo t_info = threadPool.threadInfos[i];
-        t_info.tid = tid;
-        pthread_create(&tid, NULL, t_info.func, t_info.args);
+        ThreadInfo *t_info = &(threadPool.threadInfos[i]);
+        t_info->tid = tid;
+        if (pthread_create(&(t_info->tid), NULL, t_info->func, t_info->args) != 0) perror("pthread_create error");
     }
 }
 
@@ -97,9 +103,9 @@ Semaphore SemaphoreNew(const char *debugName, int initialValue)
 {
     Semaphore sem = malloc(sizeof(struct SemaphoreImplementation));
     // sem_init is not available in macOS, use sem_open instead it.
-    sem_t *__semaphore__;
-    if (__semaphore__ = sem_open(debugName, O_CREAT, 0644, initialValue) == SEM_FAILED) perror("sem_open error");
-    sem->__semaphore__ = __semaphore__;  
+    sem_t *__semaphore__ = sem_open(debugName, O_CREAT, 0644, initialValue);
+    if (__semaphore__ == SEM_FAILED) perror("sem_open error");
+    sem->__semaphore__ = __semaphore__;
     sem->debugName = malloc(strlen(debugName) + 1);
     strcpy(sem->debugName, debugName);
     return sem;
