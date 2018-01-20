@@ -5,18 +5,16 @@
 
 void *test_func(void *args)
 {
-    ThreadInfo *this = ((ThreadInfo **)args)[0]; 
-    printf("Thread: %s is working now.\n", this->debugName);
+    char *debugName = *(char **)args; 
     
-    Semaphore done = ((Semaphore **)args)[1];
-    Semaphore canIGiveYouSomeMoney = ((Semaphore **)args)[2];
+    Semaphore done = ((Semaphore *)args)[1];
+    Semaphore canIGiveYouSomeMoney = ((Semaphore *)args)[2];
     int *total_money = ((int **)args)[3];
 
     SemaphoreWait(canIGiveYouSomeMoney);
     *total_money += 5;
+    printf("Thread: %s, total_money is: %d now.\n", debugName, *total_money);
     SemaphoreSignal(canIGiveYouSomeMoney);
-
-    printf("Thread: %s, total_money is: %d now.\n", this->debugName, *total_money);
 
     SemaphoreSignal(done);
 
@@ -27,7 +25,7 @@ int main(int argc, char **argv)
 {
     InitThreadPackage(false);
 
-    int no = 6; // the num of threads. 
+    int no = 50; // the num of threads. 
     
     Semaphore done = SemaphoreNew("done", 0); 
     Semaphore canIGiveYouSomeMoney = SemaphoreNew("canIGiveYouSomeMoney", 1);

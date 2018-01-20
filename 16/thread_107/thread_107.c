@@ -52,7 +52,7 @@ void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
     for (int i = 0; i < nArg; i++)
     {
         void *v = va_arg(ap, void *);
-        memcpy(&(((void **)t_info.args)[i+1]), &v, sizeof(void *));
+        memcpy(&(((void **)t_info.args)[i + 1]), &v, sizeof(void *));
     }
     va_end(ap);
 
@@ -82,7 +82,7 @@ const char *ThreadName(void)
     for (int i = 0; i < threadPool.logicalLength; i++)
     {
         ThreadInfo t_info = threadPool.threadInfos[i];
-        if (t_info.tid = tid) return t_info.debugName;
+        if (t_info.tid == tid) return t_info.debugName;
     }
 
     return NULL;
