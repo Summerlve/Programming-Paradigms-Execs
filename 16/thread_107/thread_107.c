@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <pthread.h>
 #include <semaphore.h>
@@ -37,29 +38,27 @@ void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
     strcpy(t_info.debugName, debugName);
     t_info.func = func;
     t_info.nArg = nArg;
+    t_info.args = malloc(sizeof(char *));
  
-    if (nArg == 0)
+    if (nArg != 0)
     {
-        t_info.args = NULL;
-        return ;
+        t_info.args = malloc((nArg + 1) * sizeof(void *));
+ 
+        va_list ap;
+        va_start(ap, nArg);
+        
+        for (int i = 0; i < nArg; i++)
+        {
+            void *v = va_arg(ap, void *);
+            memcpy(&(((void **)t_info.args)[i + 1]), &v, sizeof(void *));
+        }
+        va_end(ap);
     }
 
-    t_info.args = malloc((nArg + 1) * sizeof(void *));
- 
-    va_list ap;
-    va_start(ap, nArg);
-    
-    for (int i = 0; i < nArg; i++)
-    {
-        void *v = va_arg(ap, void *);
-        memcpy(&(((void **)t_info.args)[i + 1]), &v, sizeof(void *));
-    }
-    va_end(ap);
+    // copy debugName to t_info.args[0].
+    memcpy(t_info.args, &t_info.debugName, sizeof(char *));
 
-     // copy 'this' to t_info.args[0].
-    ThreadInfo *this = &(threadPool.threadInfos[threadPool.logicalLength]);
-    memcpy(t_info.args, &this, sizeof(ThreadInfo *));
-
+    // copy mem from loacl var to heap mem for data persistence.
     memcpy(&(threadPool.threadInfos[threadPool.logicalLength]), &t_info, sizeof(ThreadInfo));
     threadPool.logicalLength ++;
 }
@@ -118,15 +117,29 @@ const char *SemaphoreName(Semaphore s)
 
 void SemaphoreWait(Semaphore s)
 {
-    if (sem_wait(s->__semaphore__) != 0) perror("sem_wait error");
+    int result = sem_wait(s->__semaphore__);
+    if (result != 0) perror("sem_wait error");
 }
 
 void SemaphoreSignal(Semaphore s)
 {
-    if (sem_post(s->__semaphore__) != 0) perror("sem_post error");
+    int result = sem_post(s->__semaphore__);
+    if (result != 0) perror("sem_post error");
 }
 
 void SemaphoreFree(Semaphore s)
 {
-    if(sem_close(s->__semaphore__) != 0) perror("sem_close error");
+    int result = sem_close(s->__semaphore__);
+    if (result != 0) perror("sem_close error");
+    free(s->debugName);
+}
+
+void AcquireLibraryLock(void)
+{
+    
+}
+
+void ReleaseLibraryLock(void)
+{
+
 }
