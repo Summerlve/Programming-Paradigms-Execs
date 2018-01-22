@@ -32,12 +32,14 @@ const char *SemaphoreName(Semaphore s); // get semaphore's debugName
 void SemaphoreWait(Semaphore s); // semaphore -1
 void SemaphoreSignal(Semaphore s); // semaphore +1
 void SemaphoreFree(Semaphore s); // free semaphore
+
+pthread_mutex_t mutexLock;
 void AcquireLibraryLock(void);
 void ReleaseLibraryLock(void);
-#define PROTECT(code) {     \\
-    AcquireLibraryLock();   \\
-    code;                   \\
-    ReleaseLibraryLock();   \\
+#define PROTECT(code) {     \
+    AcquireLibraryLock();   \
+    code                   \
+    ReleaseLibraryLock();   \
 }
 void ListAllThreads(void);
 void ListAllSemaphores(void);

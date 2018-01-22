@@ -136,10 +136,16 @@ void SemaphoreFree(Semaphore s)
 
 void AcquireLibraryLock(void)
 {
-    
+    int inited = pthread_mutex_init(&mutexLock, NULL); 
+    if (inited != 0) perror("pthread_mutex_init error");
+    int locked = pthread_mutex_lock(&mutexLock);
+    if (locked != 0) perror("pthread_mutex_lock error");
 }
 
 void ReleaseLibraryLock(void)
 {
-
+    int unlocked = pthread_mutex_unlock(&mutexLock);
+    if (unlocked != 0) perror("pthread_mutex_unlock error");
+    int destoryed = pthread_mutex_destroy(&mutexLock);
+    if (destoryed != 0) perror("pthread_mutex_destory error");
 }

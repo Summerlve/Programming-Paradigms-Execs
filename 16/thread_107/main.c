@@ -22,10 +22,12 @@ void *test_func(void *args)
     Semaphore *canIGiveYouSomeMoney = ((Semaphore **)args)[2];
     int *total_money = ((int **)args)[3];
 
-    SemaphoreWait(*canIGiveYouSomeMoney);
-    *total_money += 5;
-    printf("Thread: %s, total_money is: %d now.\n", debugName, *total_money);
-    SemaphoreSignal(*canIGiveYouSomeMoney);
+    // SemaphoreWait(*canIGiveYouSomeMoney);
+    PROTECT(
+        *total_money += 5;
+        printf("Thread: %s, total_money is: %d now.\n", debugName, *total_money);
+    ) 
+    // SemaphoreSignal(*canIGiveYouSomeMoney);
 
     SemaphoreSignal(*done);
 
