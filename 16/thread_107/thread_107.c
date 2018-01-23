@@ -39,14 +39,14 @@ void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
     t_info.func = func;
     t_info.nArg = nArg;
     t_info.args = malloc(sizeof(char *));
- 
+
     if (nArg != 0)
     {
         t_info.args = malloc((nArg + 1) * sizeof(void *));
- 
+
         va_list ap;
         va_start(ap, nArg);
-        
+
         for (int i = 0; i < nArg; i++)
         {
             void *v = va_arg(ap, void *);
@@ -66,7 +66,7 @@ void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
 void ThreadSleep(int microSecs)
 {
     struct timespec sleeper =
-    { 
+    {
         .tv_sec = microSecs / 1000,
         .tv_nsec = (microSecs % 1000) * 10e6L
     };
@@ -136,7 +136,7 @@ void SemaphoreFree(Semaphore s)
 
 void AcquireLibraryLock(void)
 {
-    int inited = pthread_mutex_init(&mutexLock, NULL); 
+    int inited = pthread_mutex_init(&mutexLock, NULL);
     if (inited != 0) perror("pthread_mutex_init error");
     int locked = pthread_mutex_lock(&mutexLock);
     if (locked != 0) perror("pthread_mutex_lock error");
