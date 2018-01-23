@@ -11,6 +11,7 @@
 
 // default value of traceFlag is true.
 bool traceFlag = true;
+pthread_mutex_t mutexLock;
 
 void InitThreadPackage(bool flag)
 {
@@ -19,6 +20,10 @@ void InitThreadPackage(bool flag)
     threadPool.logicalLength = 0;
     threadPool.allocatedLength = 4;
     threadPool.threadInfos = malloc(sizeof(ThreadInfo) * threadPool.allocatedLength);
+
+    // init mutexLock
+    int inited = pthread_mutex_init(&mutexLock, NULL);
+    if (inited != 0) perror("pthread_mutex_init error");
 }
 
 void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
@@ -136,8 +141,6 @@ void SemaphoreFree(Semaphore s)
 
 void AcquireLibraryLock(void)
 {
-    int inited = pthread_mutex_init(&mutexLock, NULL);
-    if (inited != 0) perror("pthread_mutex_init error");
     int locked = pthread_mutex_lock(&mutexLock);
     if (locked != 0) perror("pthread_mutex_lock error");
 }
@@ -146,6 +149,4 @@ void ReleaseLibraryLock(void)
 {
     int unlocked = pthread_mutex_unlock(&mutexLock);
     if (unlocked != 0) perror("pthread_mutex_unlock error");
-    int destoryed = pthread_mutex_destroy(&mutexLock);
-    if (destoryed != 0) perror("pthread_mutex_destory error");
 }

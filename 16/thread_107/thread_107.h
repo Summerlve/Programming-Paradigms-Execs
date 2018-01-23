@@ -33,7 +33,6 @@ void SemaphoreWait(Semaphore s); // semaphore -1
 void SemaphoreSignal(Semaphore s); // semaphore +1
 void SemaphoreFree(Semaphore s); // free semaphore
 
-pthread_mutex_t mutexLock;
 void AcquireLibraryLock(void);
 void ReleaseLibraryLock(void);
 #define PROTECT(code) {     \

@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include "thread_107.h"
 
+extern pthread_mutex_t mutexLock;
+
 void printThreadInfos(struct ThreadPool threadPool)
 {
     for (int i = 0; i < threadPool.logicalLength; i++)
@@ -38,7 +40,7 @@ int main(int argc, char **argv)
 {
     InitThreadPackage(false);
 
-    int no = 5; // the num of threads.
+    int no = 2500; // the num of threads.
 
     Semaphore done = SemaphoreNew("done", 0);
     Semaphore canIGiveYouSomeMoney = SemaphoreNew("canIGiveYouSomeMoney", 1);
@@ -64,6 +66,9 @@ int main(int argc, char **argv)
 
     SemaphoreFree(done);
     SemaphoreFree(canIGiveYouSomeMoney);
+
+    int destoryed = pthread_mutex_destroy(&mutexLock);
+    if (destoryed != 0) perror("pthread_mutex_destory error");
 
     return EXIT_SUCCESS;
 }
