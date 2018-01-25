@@ -1,6 +1,16 @@
 #include <pthread.h>
 #include <semaphore.h>
 
+// extern mutexLock from thread_107.c
+extern pthread_mutex_t mutexLock;
+
+struct SemaphoreImplementation {
+    sem_t *__semaphore__;
+    const char *debugName;
+};
+
+typedef struct SemaphoreImplementation *Semaphore;
+
 typedef struct {
     const char *debugName;
     void *(*func)(void *);
@@ -13,20 +23,17 @@ struct ThreadPool{
     int logicalLength;
     int allocatedLength;
     ThreadInfo *threadInfos;
+    Semaphore *semaphores;
+    int semLogicalLength;
+    int semAllocatedLength;
 } threadPool;
 
 void InitThreadPackage(bool traceFlag);
+void FreeThreadPackage();
 void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...);
 void ThreadSleep(int microSecs);
 const char *ThreadName(void);
 void RunAllThreads(void);
-
-struct SemaphoreImplementation {
-    sem_t *__semaphore__;
-    const char *debugName;
-};
-
-typedef struct SemaphoreImplementation *Semaphore;
 Semaphore SemaphoreNew(const char *debugName, int initialValue);
 const char *SemaphoreName(Semaphore s); // get semaphore's debugName
 void SemaphoreWait(Semaphore s); // semaphore -1

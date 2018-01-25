@@ -3,33 +3,20 @@
 #include <stdbool.h>
 #include "thread_107.h"
 
-extern pthread_mutex_t mutexLock;
-
-void printThreadInfos(struct ThreadPool threadPool)
-{
-    for (int i = 0; i < threadPool.logicalLength; i++)
-    {
-        ThreadInfo *t_info = &(threadPool.threadInfos[i]);
-        printf("%s %p %p %d %p\n", t_info->debugName, t_info->func, t_info->args, t_info->nArg, t_info->tid);
-    }
-}
-
 void *test_func(void *args)
 {
 
     char *debugName = *(char **)args;
-    printf("Thread: %s is running\n", debugName);
+    printf("Thread: %s is start running\n", debugName);
 
     Semaphore *done = ((Semaphore **)args)[1];
     Semaphore *canIGiveYouSomeMoney = ((Semaphore **)args)[2];
     int *total_money = ((int **)args)[3];
 
-    // SemaphoreWait(*canIGiveYouSomeMoney);
     PROTECT(
-        *total_money += 5;
+        *total_money += 1;
         printf("Thread: %s, total_money is: %d now.\n", debugName, *total_money);
     )
-    // SemaphoreSignal(*canIGiveYouSomeMoney);
 
     SemaphoreSignal(*done);
 
@@ -40,7 +27,7 @@ int main(int argc, char **argv)
 {
     InitThreadPackage(false);
 
-    int no = 2500; // the num of threads.
+    int no = 50; // the num of threads.
 
     Semaphore done = SemaphoreNew("done", 0);
     Semaphore canIGiveYouSomeMoney = SemaphoreNew("canIGiveYouSomeMoney", 1);
@@ -62,13 +49,18 @@ int main(int argc, char **argv)
         SemaphoreWait(done);
     }
 
-    printf("total money is: %d\n", totoal_money);
+    printf("All tasks finished, total money is: %d\n", totoal_money);
 
-    SemaphoreFree(done);
-    SemaphoreFree(canIGiveYouSomeMoney);
+    // test semaphore.
+    Semaphore a = SemaphoreNew("a", 0);
+    Semaphore b = SemaphoreNew("b", 0);
+    Semaphore c = SemaphoreNew("c", 0);
+    Semaphore d = SemaphoreNew("d", 0);
 
-    int destoryed = pthread_mutex_destroy(&mutexLock);
-    if (destoryed != 0) perror("pthread_mutex_destory error");
-
+    ListAllSemaphores();
+    ListAllThreads();
+    
+    FreeThreadPackage();
+    
     return EXIT_SUCCESS;
 }

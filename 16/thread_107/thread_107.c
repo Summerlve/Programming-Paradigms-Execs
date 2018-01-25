@@ -16,14 +16,44 @@ pthread_mutex_t mutexLock;
 void InitThreadPackage(bool flag)
 {
     extern bool traceFlag;
+    extern struct ThreadPool threadPool;
+    
     traceFlag = flag;
     threadPool.logicalLength = 0;
     threadPool.allocatedLength = 4;
     threadPool.threadInfos = malloc(sizeof(ThreadInfo) * threadPool.allocatedLength);
+    threadPool.semLogicalLength = 0;
+    threadPool.semAllocatedLength = 4;
+    threadPool.semaphores = malloc(sizeof(Semaphore) * threadPool.allocatedLength);
 
     // init mutexLock
     int inited = pthread_mutex_init(&mutexLock, NULL);
     if (inited != 0) perror("pthread_mutex_init error");
+}
+
+void FreeThreadPackage()
+{
+    // free ThreadInfo's debugName and args.
+    for (int i = 0; i < threadPool.logicalLength; i++)
+    {
+        ThreadInfo *t_info = &(threadPool.threadInfos[i]);
+        free((void *)t_info->debugName);
+        free(t_info->args);
+    }
+    
+    // free the whole threadInfos
+    free(threadPool.threadInfos);
+
+    // free all Semaphores.
+    for (int i = 0; i < threadPool.semLogicalLength; i++)
+    {
+        Semaphore semaphore = threadPool.semaphores[i];
+        SemaphoreFree(semaphore);
+    }
+
+    // free mutexLock
+    int destoryed = pthread_mutex_destroy(&mutexLock);
+    if (destoryed != 0) perror("pthread_mutex_destory error");
 }
 
 void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
@@ -105,6 +135,14 @@ void RunAllThreads(void)
 
 Semaphore SemaphoreNew(const char *debugName, int initialValue)
 {
+     // expand the semphores. 
+    if (threadPool.semLogicalLength == threadPool.semAllocatedLength)
+    {
+        threadPool.semaphores = realloc(threadPool.semaphores,
+                                        sizeof(Semaphore) * threadPool.semAllocatedLength * 2);
+        threadPool.semAllocatedLength *= 2;
+    }
+
     Semaphore sem = malloc(sizeof(struct SemaphoreImplementation));
     // sem_init is not available in macOS, use sem_open instead it.
     sem_t *__semaphore__ = sem_open(debugName, O_CREAT, 0644, initialValue);
@@ -112,6 +150,10 @@ Semaphore SemaphoreNew(const char *debugName, int initialValue)
     sem->__semaphore__ = __semaphore__;
     sem->debugName = malloc(strlen(debugName) + 1);
     strcpy(sem->debugName, debugName);
+
+    memcpy(&(threadPool.semaphores[threadPool.semLogicalLength]), &sem, sizeof(Semaphore));
+    threadPool.semLogicalLength ++;
+
     return sem;
 }
 
@@ -141,12 +183,30 @@ void SemaphoreFree(Semaphore s)
 
 void AcquireLibraryLock(void)
 {
+    extern pthread_mutex_t mutexLock;
     int locked = pthread_mutex_lock(&mutexLock);
     if (locked != 0) perror("pthread_mutex_lock error");
 }
 
 void ReleaseLibraryLock(void)
 {
+    extern pthread_mutex_t mutexLock;
     int unlocked = pthread_mutex_unlock(&mutexLock);
     if (unlocked != 0) perror("pthread_mutex_unlock error");
+}
+
+void ListAllThreads(void)
+{
+    for (int i = 0; i < threadPool.logicalLength; i++)
+    {
+        printf("Thread's debugName is: %s\n", threadPool.threadInfos[i].debugName);
+    }
+}
+
+void ListAllSemaphores(void)
+{
+    for (int i = 0; i < threadPool.semLogicalLength; i++)
+    {
+        printf("Semaphore's debugName is %s\n", threadPool.semaphores[i]->debugName);
+    }
 }
