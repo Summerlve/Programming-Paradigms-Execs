@@ -1,9 +1,6 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-// extern mutexLock from thread_107.c
-extern pthread_mutex_t mutexLock;
-
 struct SemaphoreImplementation {
     sem_t *__semaphore__;
     const char *debugName;

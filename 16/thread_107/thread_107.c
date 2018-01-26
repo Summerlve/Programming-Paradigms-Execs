@@ -13,11 +13,11 @@
 bool traceFlag = true;
 pthread_mutex_t mutexLock;
 
+// extern threadPool from thread_107.h.
+extern struct ThreadPool threadPool;
+
 void InitThreadPackage(bool flag)
 {
-    extern bool traceFlag;
-    extern struct ThreadPool threadPool;
-    
     traceFlag = flag;
     threadPool.logicalLength = 0;
     threadPool.allocatedLength = 4;
@@ -50,6 +50,9 @@ void FreeThreadPackage()
         Semaphore semaphore = threadPool.semaphores[i];
         SemaphoreFree(semaphore);
     }
+
+    // free the whole semaphores
+    free(threadPool.semaphores);
 
     // free mutexLock
     int destoryed = pthread_mutex_destroy(&mutexLock);
@@ -183,14 +186,12 @@ void SemaphoreFree(Semaphore s)
 
 void AcquireLibraryLock(void)
 {
-    extern pthread_mutex_t mutexLock;
     int locked = pthread_mutex_lock(&mutexLock);
     if (locked != 0) perror("pthread_mutex_lock error");
 }
 
 void ReleaseLibraryLock(void)
 {
-    extern pthread_mutex_t mutexLock;
     int unlocked = pthread_mutex_unlock(&mutexLock);
     if (unlocked != 0) perror("pthread_mutex_unlock error");
 }
