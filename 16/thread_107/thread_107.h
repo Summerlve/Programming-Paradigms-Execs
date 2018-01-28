@@ -1,5 +1,6 @@
 #include <pthread.h>
 #include <semaphore.h>
+#include <stdbool.h>
 
 struct SemaphoreImplementation {
     sem_t *__semaphore__;
