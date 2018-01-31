@@ -8,6 +8,7 @@ struct{
     Semaphore requested;
     Semaphore finished;
     Semaphore lock; // binary lock for the manager
+    Semaphore approvedAll // waiting for all cones done.
 } inspection;
 
 struct {
@@ -32,6 +33,7 @@ void *Clerk(void *args)
         SemaphoreSignal(inspection.lock);
     }
 
+    printf("clerk done\n");
     SemaphoreSignal(clerksDone);
 
     return NULL;
@@ -57,7 +59,12 @@ void *Customer(void *args)
     int place = queue.number ++;
     SemaphoreSignal(queue.lock);
     SemaphoreSignal(queue.requested);
-    SemaphoreSignal(queue.customers[place]);
+    SemaphoreWait(queue.customers[place]);
+
+    // free the numCones
+    free((((int **)args)[1]));
+
+    printf("customer done\n");
 
     return NULL;
 }
@@ -69,6 +76,8 @@ void *Cashier(void *args)
         SemaphoreWait(queue.requested);
         // CheckOutMoney() here
         SemaphoreSignal(queue.customers[i]);
+
+        printf("cashier checked out customer[%d]\n", i);
     }
 
     return NULL;
@@ -89,6 +98,8 @@ void *Manager(void *args)
         SemaphoreSignal(inspection.finished);
     }
 
+    SemaphoreSignal(inspection.approvedAll);
+
     return NULL;
 }
 
@@ -99,6 +110,7 @@ void SetSomeSemaphore()
     inspection.requested = SemaphoreNew("m_r", 0);
     inspection.finished = SemaphoreNew("m_f", 0);
     inspection.lock = SemaphoreNew("m_l", 1);
+    inspection.approvedAll = SemaphoreNew("m_a", 0);
 
     // init queue.
     queue.number = 0;
@@ -136,7 +148,13 @@ int main(int argc, char **argv)
     ThreadNew("cashier", Cashier, 0);
     ThreadNew("manager", Manager, 1, &totalCones);
 
+    printf("totalCones is: %d\n", totalCones);
+
     RunAllThreads();
+
+    SemaphoreWait(inspection.approvedAll); // waiting for all cones done
+    printf("manager checked all cones done\n");
+
     FreeThreadPackage();
 
     return EXIT_SUCCESS;
