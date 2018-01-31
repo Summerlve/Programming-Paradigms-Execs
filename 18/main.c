@@ -20,7 +20,7 @@ struct {
 void *Clerk(void *args)
 {
     bool passed = false;
-    Semaphore clerksDone;
+    Semaphore clerksDone = ((Semaphore *)args)[1];
 
     while (!passed)
     {
@@ -39,12 +39,12 @@ void *Clerk(void *args)
 
 void *Customer(void *args)
 {
-    int numCones = 0;
+    int numCones = *(((int **)args)[1]);
     Semaphore clerksDone;
 
     for (int i = 0; i < numCones; i++)
     {
-        ThreadNew("clerk", Clerk, 1, &clerksDone);
+        ThreadNew("clerk", Clerk, 1, clerksDone);
     }
 
     for (int i = 0; i < numCones; i++)
@@ -70,13 +70,13 @@ void *Cashier(void *args)
         // CheckOutMoney() here
         SemaphoreSignal(queue.customers[i]);
     }
-    
+
     return NULL;
 }
 
 void *Manager(void *args)
 {
-    int totalCones = 0;
+    int totalCones = *(((int **)args)[1]);
     int approved = 0;
     int checked = 0;
 
@@ -85,6 +85,7 @@ void *Manager(void *args)
         SemaphoreWait(inspection.requested);
         checked ++;
         inspection.passed = RandomInteger(0, 1);
+        if (inspection.passed) approved ++;
         SemaphoreSignal(inspection.finished);
     }
 
@@ -111,27 +112,29 @@ void SetSomeSemaphore()
 
 int RandomInteger(int min, int max)
 {
-    srand((unsigned int)time(0));
     int value = rand() % (max + 1 - min) + min;
     return value;
 }
 
 int main(int argc, char **argv)
 {
-    // sell cones
-
+    // this program is about selling cones
     InitThreadPackage(false);
+    srand(time(NULL)); // should only be called once.
 
+    // we have 10 customers.
     SetSomeSemaphore();
     int totalCones = 0;
     for (int i = 0; i < 10; i++)
     {
+        void *v = malloc(sizeof(int));
         int cones = RandomInteger(1, 4);
+        memcpy(v, &cones, sizeof(int));
         totalCones += cones;
-        ThreadNew("customer", Customer, 1, &cones);
+        ThreadNew("customer", Customer, 1, v);
     }
     ThreadNew("cashier", Cashier, 0);
-    ThreadNew("manager", Manager, 1, totalCones);
+    ThreadNew("manager", Manager, 1, &totalCones);
 
     RunAllThreads();
     FreeThreadPackage();
