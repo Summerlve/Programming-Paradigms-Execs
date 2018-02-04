@@ -24,7 +24,7 @@ void InitThreadPackage(bool flag)
     threadPool.threadInfos = malloc(sizeof(ThreadInfo) * threadPool.allocatedLength);
     threadPool.semLogicalLength = 0;
     threadPool.semAllocatedLength = 4;
-    threadPool.semaphores = malloc(sizeof(Semaphore) * threadPool.allocatedLength);
+    threadPool.semaphores = malloc(sizeof(Semaphore) * threadPool.semAllocatedLength);
 
     // init mutexLock
     int inited = pthread_mutex_init(&mutexLock, NULL);
@@ -68,6 +68,12 @@ void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
     {
         threadPool.threadInfos = realloc(threadPool.threadInfos,
                                         sizeof(ThreadInfo) * threadPool.allocatedLength * 2);
+        while (threadPool.threadInfos == NULL)                                        
+        {
+            perror("threadPool.threadInfos realloc error"); 
+            threadPool.threadInfos = realloc(threadPool.threadInfos,
+                                        sizeof(ThreadInfo) * threadPool.allocatedLength * 2);
+        }
         threadPool.allocatedLength *= 2;
     }
 
@@ -143,6 +149,12 @@ Semaphore SemaphoreNew(const char *debugName, int initialValue)
     {
         threadPool.semaphores = realloc(threadPool.semaphores,
                                         sizeof(Semaphore) * threadPool.semAllocatedLength * 2);
+        while (threadPool.semaphores == NULL) 
+        {
+            perror("threadPool.semaphores realloc error");
+            threadPool.semaphores = realloc(threadPool.semaphores,
+                                        sizeof(Semaphore) * threadPool.semAllocatedLength * 2);
+        }
         threadPool.semAllocatedLength *= 2;
     }
 

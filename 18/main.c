@@ -8,7 +8,7 @@ struct{
     Semaphore requested;
     Semaphore finished;
     Semaphore lock; // binary lock for the manager
-    Semaphore approvedAll // waiting for all cones done.
+    Semaphore approvedAll; // waiting for all cones done.
 } inspection;
 
 struct {
@@ -17,6 +17,12 @@ struct {
     Semaphore customers[10];
     Semaphore lock; // binary lock for the number
 } queue;
+
+int RandomInteger(int min, int max)
+{
+    int value = rand() % (max + 1 - min) + min;
+    return value;
+}
 
 void *Clerk(void *args)
 {
@@ -42,7 +48,8 @@ void *Clerk(void *args)
 void *Customer(void *args)
 {
     int numCones = *(((int **)args)[1]);
-    Semaphore clerksDone;
+    printf("customer's numCones is %d\n", numCones);
+    Semaphore clerksDone = SemaphoreNew("clerk", 0);
 
     for (int i = 0; i < numCones; i++)
     {
@@ -62,7 +69,7 @@ void *Customer(void *args)
     SemaphoreWait(queue.customers[place]);
 
     // free the numCones
-    free((((int **)args)[1]));
+    free(((int **)args)[1]);
 
     printf("customer done\n");
 
@@ -95,6 +102,7 @@ void *Manager(void *args)
         checked ++;
         inspection.passed = RandomInteger(0, 1);
         if (inspection.passed) approved ++;
+        printf("manager checked %d cones up", approved);
         SemaphoreSignal(inspection.finished);
     }
 
@@ -105,6 +113,7 @@ void *Manager(void *args)
 
 void SetSomeSemaphore()
 {
+    printf("set some semaphore\n");
     // init inspection.
     inspection.passed = false;
     inspection.requested = SemaphoreNew("m_r", 0);
@@ -120,12 +129,6 @@ void SetSomeSemaphore()
         queue.customers[i] = SemaphoreNew("c_c", 0);
     }
     queue.lock = SemaphoreNew("c_l", 1);
-}
-
-int RandomInteger(int min, int max)
-{
-    int value = rand() % (max + 1 - min) + min;
-    return value;
 }
 
 int main(int argc, char **argv)
