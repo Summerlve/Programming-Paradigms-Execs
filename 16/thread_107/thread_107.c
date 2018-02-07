@@ -7,11 +7,13 @@
 #include <time.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <errno.h>
 #include "thread_107.h"
 
-// default value of traceFlag is true.
-bool traceFlag = true;
-pthread_mutex_t mutexLock;
+bool traceFlag = true; // default value of traceFlag is true.
+pthread_mutex_t mutexLock; // mutex lock for AcquireLibraryLock API
+pthread_mutex_t threadNewLock; // mutex lock to protect shared infomations in threadPool when calling the ThreadNew
+pthread_mutex_t semaphoreNewLock; // mutex lock to protect shared infomations in threadPool when calling the SemaphoreNew
 
 // extern threadPool from thread_107.h.
 extern struct ThreadPool threadPool;
@@ -28,6 +30,14 @@ void InitThreadPackage(bool flag)
 
     // init mutexLock
     int inited = pthread_mutex_init(&mutexLock, NULL);
+    if (inited != 0) perror("pthread_mutex_init error");
+
+    // init threadNewLock
+    inited = pthread_mutex_init(&threadNewLock, NULL);
+    if (inited != 0) perror("pthread_mutex_init error");
+
+    // init semaphoreNewLock
+    inited = pthread_mutex_init(&semaphoreNewLock, NULL);
     if (inited != 0) perror("pthread_mutex_init error");
 }
 
@@ -57,22 +67,32 @@ void FreeThreadPackage()
     // free mutexLock
     int destoryed = pthread_mutex_destroy(&mutexLock);
     if (destoryed != 0) perror("pthread_mutex_destory error");
+
+    // free threadNewLock
+    destoryed = pthread_mutex_destroy(&threadNewLock);
+    if (destoryed != 0) perror("pthread_mutex_destory error");
+
+    // free semaphoreNewLock
+    destoryed = pthread_mutex_destroy(&semaphoreNewLock);
+    if (destoryed != 0) perror("pthread_mutex_destory error");
 }
 
 void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
 {
     // variable-argument function, only accepts pointer(actually void *) as non-name arguments.
 
+    // confirm that only one thread can call this function every single time
+    int locked = pthread_mutex_lock(&threadNewLock);
+    if (locked != 0) perror("pthread_mutex_lock error");
+
     // expand the threadInfos
     if (threadPool.logicalLength == threadPool.allocatedLength)
     {
         threadPool.threadInfos = realloc(threadPool.threadInfos,
                                         sizeof(ThreadInfo) * threadPool.allocatedLength * 2);
-        while (threadPool.threadInfos == NULL)                                        
-        {
-            perror("threadPool.threadInfos realloc error"); 
-            threadPool.threadInfos = realloc(threadPool.threadInfos,
-                                        sizeof(ThreadInfo) * threadPool.allocatedLength * 2);
+        if (threadPool.threadInfos == NULL) {
+            printf("errorno is: %d\n", errno);
+            perror("realloc error\n");
         }
         threadPool.allocatedLength *= 2;
     }
@@ -105,6 +125,9 @@ void ThreadNew(const char *debugName, void *(*func)(void *), int nArg, ...)
     // copy mem from loacl var to heap mem for data persistence.
     memcpy(&(threadPool.threadInfos[threadPool.logicalLength]), &t_info, sizeof(ThreadInfo));
     threadPool.logicalLength ++;
+
+    int unlocked = pthread_mutex_unlock(&threadNewLock);
+    if (unlocked != 0) perror("pthread_mutex_unlock error");
 }
 
 void ThreadSleep(int microSecs)
@@ -144,16 +167,18 @@ void RunAllThreads(void)
 
 Semaphore SemaphoreNew(const char *debugName, int initialValue)
 {
-     // expand the semphores. 
+    // confirm that only one thread can call this function every single time
+    int locked = pthread_mutex_lock(&semaphoreNewLock);
+    if (locked != 0) perror("pthread_mutex_lock error");
+
+    // expand the semphores. 
     if (threadPool.semLogicalLength == threadPool.semAllocatedLength)
     {
         threadPool.semaphores = realloc(threadPool.semaphores,
                                         sizeof(Semaphore) * threadPool.semAllocatedLength * 2);
-        while (threadPool.semaphores == NULL) 
-        {
-            perror("threadPool.semaphores realloc error");
-            threadPool.semaphores = realloc(threadPool.semaphores,
-                                        sizeof(Semaphore) * threadPool.semAllocatedLength * 2);
+        if (threadPool.semaphores == NULL) {
+            printf("errno is: %d\n", errno);
+            perror("realloc error\n");
         }
         threadPool.semAllocatedLength *= 2;
     }
@@ -168,6 +193,9 @@ Semaphore SemaphoreNew(const char *debugName, int initialValue)
 
     memcpy(&(threadPool.semaphores[threadPool.semLogicalLength]), &sem, sizeof(Semaphore));
     threadPool.semLogicalLength ++;
+
+    int unlocked = pthread_mutex_unlock(&semaphoreNewLock);
+    if (unlocked != 0) perror("pthread_mutex_unlock error");
 
     return sem;
 }
