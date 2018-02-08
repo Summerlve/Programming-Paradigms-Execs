@@ -18,6 +18,7 @@ pthread_mutex_t semaphoreNewLock; // mutex lock to protect shared infomations in
 // extern threadPool from thread_107.h.
 extern struct ThreadPool threadPool;
 
+// for thread safety, you can call InitThreadPackage function only once in one thread(normally it will be the main thread)
 void InitThreadPackage(bool flag)
 {
     traceFlag = flag;
@@ -41,6 +42,7 @@ void InitThreadPackage(bool flag)
     if (inited != 0) perror("pthread_mutex_init error");
 }
 
+// for thread safety, you can call FreeThreadPackage function only once in one thread(normally it will be the main thread)
 void FreeThreadPackage()
 {
     // free ThreadInfo's debugName and args.
@@ -144,16 +146,25 @@ void ThreadSleep(int microSecs)
 const char *ThreadName(void)
 {
     pthread_t tid = pthread_self();
+    const char *debugName = NULL;
+
+    // confirm that only one thread can call this function every single time
+    int locked = pthread_mutex_lock(&threadNewLock);
+    if (locked != 0) perror("pthread_mutex_lock error");
 
     for (int i = 0; i < threadPool.logicalLength; i++)
     {
         ThreadInfo t_info = threadPool.threadInfos[i];
-        if (t_info.tid == tid) return t_info.debugName;
+        if (t_info.tid == tid) debugName = t_info.debugName;
     }
 
-    return NULL;
+    int unlocked = pthread_mutex_unlock(&threadNewLock);
+    if (unlocked != 0) perror("pthread_mutex_unlock error");
+
+    return debugName;
 }
 
+// for thread safety, you can call RunAllThreads function only once in one thread(normally it will be the main thread)
 void RunAllThreads(void)
 {
     for (int i = 0; i < threadPool.logicalLength; i++)
@@ -238,16 +249,30 @@ void ReleaseLibraryLock(void)
 
 void ListAllThreads(void)
 {
+    // confirm that only one thread can call this function every single time
+    int locked = pthread_mutex_lock(&threadNewLock);
+    if (locked != 0) perror("pthread_mutex_lock error");
+
     for (int i = 0; i < threadPool.logicalLength; i++)
     {
         printf("Thread's debugName is: %s\n", threadPool.threadInfos[i].debugName);
     }
+
+    int unlocked = pthread_mutex_unlock(&threadNewLock);
+    if (unlocked != 0) perror("pthread_mutex_unlock error");
 }
 
 void ListAllSemaphores(void)
 {
+    // confirm that only one thread can call this function every single time
+    int locked = pthread_mutex_lock(&semaphoreNewLock);
+    if (locked != 0) perror("pthread_mutex_lock error");
+
     for (int i = 0; i < threadPool.semLogicalLength; i++)
     {
         printf("Semaphore's debugName is %s\n", threadPool.semaphores[i]->debugName);
     }
+
+    int unlocked = pthread_mutex_unlock(&semaphoreNewLock);
+    if (unlocked != 0) perror("pthread_mutex_unlock error");
 }
