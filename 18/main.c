@@ -30,7 +30,7 @@ void *Clerk(void *args)
     bool passed = false;
     Semaphore clerksDone = ((Semaphore *)args)[1];
 
-    while (!passed)
+    while (passed != true)
     {
         // MakeCones() here
         SemaphoreWait(inspection.lock);
@@ -69,6 +69,7 @@ void *Customer(void *args)
     // WalkToCashier() here
     SemaphoreWait(queue.lock);
     int place = queue.number ++;
+    printf("%s thread, it's queue.number is %d\n", debugName, place);
     SemaphoreSignal(queue.lock);
     SemaphoreSignal(queue.requested);
     SemaphoreWait(queue.customers[place]);
@@ -88,8 +89,8 @@ void *Cashier(void *args)
     {
         SemaphoreWait(queue.requested);
         // CheckOutMoney() here
+        printf("%s thread, cashier checks queue.number[%d]\n", debugName, i);
         SemaphoreSignal(queue.customers[i]);
-        printf("%s thread, cashier checks customer[%d]\n", debugName, i);
     }
     return NULL;
 }
@@ -140,17 +141,16 @@ void SetSomeSemaphore()
 
 int main(int argc, char **argv)
 {
-    // this program is about selling cones
-    InitThreadPackage(false);
+    InitThreadPackage(false); // this program is about selling cones.
     srand(time(NULL)); // should only be called once.
-    // we have 10 customers.
-    SetSomeSemaphore();
+    SetSomeSemaphore(); 
+
     int totalCones = 0;
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 10; i++) // we have 10 customers.
     {
-        void *v = malloc(sizeof(int));
+        int *v = (int *)malloc(sizeof(int));
         int cones = RandomInteger(1, 4);
-        memcpy(v, &cones, sizeof(int));
+        *v = cones;
         totalCones += cones;
         // itos
         char str[16];
@@ -170,6 +170,8 @@ int main(int argc, char **argv)
     }
 
     FreeThreadPackage();
+
+    printf("Main thread done\n");
 
     return EXIT_SUCCESS;
 }
