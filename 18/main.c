@@ -40,7 +40,7 @@ void *Clerk(void *args)
         SemaphoreSignal(inspection.lock);
     }
 
-    printf("%s thread, clerk done\n", debugName);
+    fprintf(stdout, "%s thread, clerk done\n", debugName);
     SemaphoreSignal(clerksDone);
 
     return NULL;
@@ -50,16 +50,8 @@ void *Customer(void *args)
 {
     char *debugName = *(char **)args;
     int numCones = *(((int **)args)[1]);
-    printf("%s thread, numCones is %d\n", debugName, numCones);
-    Semaphore clerksDone = SemaphoreNew("clerk", 0);
-
-    for (int i = 0; i < numCones; i++)
-    {
-        // itos
-        char str[32];
-        sprintf(str, "Clerk[%d] - %s", i, debugName);
-        ThreadNew(str, Clerk, 1, clerksDone);
-    }
+    fprintf(stdout, "%s thread, numCones is %d\n", debugName, numCones);
+    Semaphore clerksDone = ((Semaphore *)args)[2];
 
     for (int i = 0; i < numCones; i++)
     {
@@ -69,14 +61,14 @@ void *Customer(void *args)
     // WalkToCashier() here
     SemaphoreWait(queue.lock);
     int place = queue.number ++;
-    printf("%s thread, it's queue.number is %d\n", debugName, place);
+    fprintf(stdout, "%s thread, it's queue.number is %d\n", debugName, place);
     SemaphoreSignal(queue.lock);
     SemaphoreSignal(queue.requested);
     SemaphoreWait(queue.customers[place]);
 
     // free the numCones
     free(((int **)args)[1]);
-    printf("%s thread, done\n", debugName);
+    fprintf(stdout, "%s thread, done\n", debugName);
     SemaphoreSignal(inspection.approvedAll);
 
     return NULL;
@@ -89,7 +81,7 @@ void *Cashier(void *args)
     {
         SemaphoreWait(queue.requested);
         // CheckOutMoney() here
-        printf("%s thread, cashier checks queue.number[%d]\n", debugName, i);
+        fprintf(stdout, "%s thread, cashier checks queue.number[%d]\n", debugName, i);
         SemaphoreSignal(queue.customers[i]);
     }
     return NULL;
@@ -110,18 +102,18 @@ void *Manager(void *args)
         if (inspection.passed) 
         {
             approved ++;
-            printf("%s thread, manager have checked %d cones\n", debugName, approved);
+            fprintf(stdout, "%s thread, manager have checked %d cones\n", debugName, approved);
         }
         SemaphoreSignal(inspection.finished);
     }
 
-    printf("%s thread, manager checked all cones done\n", debugName);
+    fprintf(stdout, "%s thread, manager checked all cones done\n", debugName);
     return NULL;
 }
 
 void SetSomeSemaphore()
 {
-    printf("Set some semaphores\n");
+    fprintf(stdout, "Set some semaphores\n");
     // init inspection.
     inspection.passed = false;
     inspection.requested = SemaphoreNew("inspection.requested", 0);
@@ -152,15 +144,25 @@ int main(int argc, char **argv)
         int cones = RandomInteger(1, 4);
         *v = cones;
         totalCones += cones;
+
         // itos
-        char str[16];
-        sprintf(str, "Customer[%d]", i);
-        ThreadNew(str, Customer, 1, v);
+        char customer_str[16];
+        sprintf(customer_str, "Customer[%d]", i);
+        Semaphore clerksDone = SemaphoreNew("clerk", 0);
+        ThreadNew(customer_str, Customer, 2, v, clerksDone);
+        
+        for (int j = 0; j < cones; j++)
+        {
+            // itos
+            char clerk_str[32];
+            sprintf(clerk_str, "Clerk[%d] - %s", j, customer_str);
+            ThreadNew(clerk_str, Clerk, 1, clerksDone);
+        }
     }
     ThreadNew("Cashier", Cashier, 0);
     ThreadNew("Manager", Manager, 1, &totalCones);
 
-    printf("Main thread, totalCones is: %d\n", totalCones);
+    fprintf(stdout, "Main thread, totalCones is: %d\n", totalCones);
 
     RunAllThreads();
 
@@ -171,7 +173,7 @@ int main(int argc, char **argv)
 
     FreeThreadPackage();
 
-    printf("Main thread done\n");
+    fprintf(stdout, "Main thread done\n");
 
     return EXIT_SUCCESS;
 }

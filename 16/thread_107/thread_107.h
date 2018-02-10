@@ -1,3 +1,6 @@
+#ifndef __THREAD_107_H
+#define __THREAD_107_H
+
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdbool.h>
@@ -47,3 +50,5 @@ void ReleaseLibraryLock(void);
 }
 void ListAllThreads(void);
 void ListAllSemaphores(void);
+
+#endif
