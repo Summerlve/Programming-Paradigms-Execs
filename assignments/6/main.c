@@ -7,7 +7,15 @@
 #define NUM_STUDENTS 115
 #define NUM_MACHINES 20
 
+typedef struct {
+    Semaphore lock;
+    Semaphore requested;
+    Semaphore finished;
+    int bugs;
+} SingleTA;
 
+SingleTA tas[NUM_TAS];
+Semaphore Computer;
 
 void *TA(void *args)
 {
@@ -22,7 +30,14 @@ void *Student(void *args)
 
 void SetSomeSemaphore(void)
 {
-
+    Computer =  SemaphoreNew("Computer", NUM_MACHINES);
+    for (int i = 0; i < NUM_TAS; i++)
+    {
+        tas[i].lock = SemaphoreNew("TA_LOCK", 1);
+        tas[i].requested = SemaphoreNew("TA_REQUESTED", 0);
+        tas[i].finished = SemaphoreNew("TA_FINISHED", 0);
+        tas[i].bugs = 0;
+    }
 }
 
 static int Examine(void)
@@ -52,6 +67,7 @@ int main(int argc, char **argv)
 {
     InitThreadPackage(false);
     srand(time(NULL)); // random seed init, should only be called once.
+    SetSomeSemaphore();
     for(int i = 0; i < NUM_TAS; i++) ThreadNew("TA", TA, 1, i);
     for(int i = 0; i < NUM_STUDENTS; i++) ThreadNew("Student", Student, 0);
     RunAllThreads();
