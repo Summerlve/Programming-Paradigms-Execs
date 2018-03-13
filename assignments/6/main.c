@@ -17,17 +17,6 @@ typedef struct {
 SingleTA tas[NUM_TAS];
 Semaphore Computer;
 
-void *TA(void *args)
-{
-    return NULL;
-}
-
-void *Student(void *args)
-{
-
-    return NULL;
-}
-
 void SetSomeSemaphore(void)
 {
     Computer =  SemaphoreNew("Computer", NUM_MACHINES);
@@ -38,6 +27,16 @@ void SetSomeSemaphore(void)
         tas[i].finished = SemaphoreNew("TA_FINISHED", 0);
         tas[i].bugs = 0;
     }
+}
+
+void WaitComputer(void)
+{
+
+}
+
+void SearchForAvailableTA(void)
+{
+    int index;
 }
 
 static int Examine(void)
@@ -61,6 +60,37 @@ static void Debug(void)
 static void Rejoice(void)
 {
     printf("Student rejoice\n");
+}
+
+void *TA(void *args)
+{
+    int ta;
+    SemaphoreWait(tas[ta].requested);
+    tas[ta].bugs = Examine();
+    SemaphoreSignal(tas[ta].finished);
+    ReadEmail();
+    return NULL;
+}
+
+void *Student(void *args)
+{
+    int bugs = 1; // assume is just one bug initially
+    int ta;
+
+    while (bugs != 0 && bugs < 10)
+    {
+        WaitComputer();
+        Debug();
+        SearchForAvailableTA();
+        SemaphoreSignal(tas[ta].requested);
+        SemaphoreWait(tas[ta].finished);
+        bugs = tas[ta].bugs;
+    }
+
+    SemaphoreSignal(NULL); // realse computer
+    SemaphoreSignal(tas[ta].lock); // realse ta
+
+    return NULL;
 }
 
 int main(int argc, char **argv)
