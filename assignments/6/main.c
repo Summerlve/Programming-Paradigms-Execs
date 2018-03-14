@@ -15,11 +15,13 @@ typedef struct {
 } SingleTA;
 
 SingleTA tas[NUM_TAS];
-Semaphore Computer;
+Semaphore Computers;
+int StudentCount;
 
 void SetSomeSemaphore(void)
 {
-    Computer =  SemaphoreNew("Computer", NUM_MACHINES);
+    Computers =  SemaphoreNew("Computer", NUM_MACHINES);
+    StudentCount = 0;
     for (int i = 0; i < NUM_TAS; i++)
     {
         tas[i].lock = SemaphoreNew("TA_LOCK", 1);
@@ -29,14 +31,11 @@ void SetSomeSemaphore(void)
     }
 }
 
-void WaitComputer(void)
+int SearchForAvailableTA(void)
 {
+    int ta;
 
-}
-
-void SearchForAvailableTA(void)
-{
-    int index;
+    return ta;
 }
 
 static int Examine(void)
@@ -64,7 +63,7 @@ static void Rejoice(void)
 
 void *TA(void *args)
 {
-    int ta;
+    int ta = *(((int **)args)[1]);
     SemaphoreWait(tas[ta].requested);
     tas[ta].bugs = Examine();
     SemaphoreSignal(tas[ta].finished);
@@ -79,17 +78,27 @@ void *Student(void *args)
 
     while (bugs != 0 && bugs < 10)
     {
-        WaitComputer();
+        SemaphoreWait(Computers);
         Debug();
-        SearchForAvailableTA();
+        ta = SearchForAvailableTA();
         SemaphoreSignal(tas[ta].requested);
         SemaphoreWait(tas[ta].finished);
         bugs = tas[ta].bugs;
     }
 
-    SemaphoreSignal(NULL); // realse computer
+    SemaphoreSignal(Computers); // realse computer
     SemaphoreSignal(tas[ta].lock); // realse ta
 
+    Rejoice();
+    
+    PROTECT(
+        StudentCount ++;
+        if (StudentCount == NUM_STUDENTS)
+        {
+            printf("wake up all the TAs to tell them that they can all go home");
+        }
+    )
+ 
     return NULL;
 }
 
