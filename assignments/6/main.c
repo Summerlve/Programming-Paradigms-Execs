@@ -12,6 +12,7 @@ typedef struct {
     Semaphore requested;
     Semaphore finished;
     int bugs;
+    bool available;
 } SingleTA;
 
 SingleTA tas[NUM_TAS];
@@ -28,13 +29,31 @@ void SetSomeSemaphore(void)
         tas[i].requested = SemaphoreNew("TA_REQUESTED", 0);
         tas[i].finished = SemaphoreNew("TA_FINISHED", 0);
         tas[i].bugs = 0;
+        tas[i].available = true;
     }
+}
+
+static int RandomInteger(int min, int max)
+{
+    int value = rand() % (max + 1 - min) + min;
+    return value;
 }
 
 int SearchForAvailableTA(void)
 {
     int ta;
 
+    for (int i = 0; i < NUM_TAS; i++)
+    {
+        if (tas[i].available == true) 
+        {
+            ta = i;
+            break;
+        }
+    }
+
+    ta = RandomInteger(0, NUM_TAS - 1);
+    
     return ta;
 }
 
@@ -42,8 +61,7 @@ static int Examine(void)
 {
     int min = 0;
     int max = 10;
-    int value = rand() % (max + 1 - min) + min;
-    return value;
+    return RandomInteger(min, max);
 }
 
 static void ReadEmail(void)
@@ -87,6 +105,8 @@ void *Student(void *args)
     {
         Debug();
         ta = SearchForAvailableTA();
+        SemaphoreWait(tas[ta].lock);
+        tas[ta].available = false;
         SemaphoreSignal(tas[ta].requested);
         SemaphoreWait(tas[ta].finished);
         bugs = tas[ta].bugs;
