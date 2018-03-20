@@ -16,14 +16,12 @@ typedef struct {
 
 SingleTA tas[NUM_TAS];
 Semaphore Computers;
-Semaphore Students;
 int StudentCounter = 0;
 bool isFinished = false;
 
 void SetSomeSemaphore(void)
 {
     Computers =  SemaphoreNew("Computer", NUM_MACHINES);
-    Students = SemaphoreNew("Student", 0);
     for (int i = 0; i < NUM_TAS; i++)
     {
         tas[i].lock = SemaphoreNew("TA_LOCK", 1);
@@ -36,7 +34,7 @@ void SetSomeSemaphore(void)
 int SearchForAvailableTA(void)
 {
     int ta;
-    
+
     return ta;
 }
 
@@ -65,17 +63,17 @@ static void Rejoice(void)
 
 void *TA(void *args)
 {
+    int ta = *(((int **)args)[1]);
+
     while (isFinished == false)
     {
-        SemaphoreWait(Students);
-        int ta = *(((int **)args)[1]);
         SemaphoreWait(tas[ta].requested);
         tas[ta].bugs = Examine();
         SemaphoreSignal(tas[ta].finished);
         ReadEmail();
     }
 
-    printf("I can go home now\n"); 
+    printf("TA: I can go home now\n");
     return NULL;
 }
 
@@ -84,10 +82,9 @@ void *Student(void *args)
     int bugs = 1; // assume is just one bug initially
     int ta;
     SemaphoreWait(Computers);
-    
+
     while (bugs != 0 && bugs < 10)
     {
-        SemaphoreSignal(Students);
         Debug();
         ta = SearchForAvailableTA();
         SemaphoreSignal(tas[ta].requested);
@@ -99,30 +96,33 @@ void *Student(void *args)
     SemaphoreSignal(tas[ta].lock); // realse ta
 
     Rejoice();
-    
+
     PROTECT(
         StudentCounter ++;
         if (StudentCounter == NUM_STUDENTS)
         {
             isFinished = true;
-            printf("wake up all the TAs to tell them that they can all go home");
+            printf("The last student: wake up all the TAs to tell them that they can all go home");
             for (int i = 0; i < NUM_TAS; i++)
             {
-                SemaphoreSignal(Students);
+                SemaphoreSignal(tas[i].requested);
             }
         }
     )
- 
+
     return NULL;
 }
 
 int main(int argc, char **argv)
 {
-    printf("%d\n", StudentCounter);
     InitThreadPackage(false);
     srand(time(NULL)); // random seed init, should only be called once.
     SetSomeSemaphore();
-    for(int i = 0; i < NUM_TAS; i++) ThreadNew("TA", TA, 1, i);
+    for(int i = 0; i < NUM_TAS; i++) {
+        int *ta_index = malloc(sizeof(int));
+        *ta_index = i;
+        ThreadNew("TA", TA, 1, ta_index);
+    }
     for(int i = 0; i < NUM_STUDENTS; i++) ThreadNew("Student", Student, 0);
     RunAllThreads();
     return EXIT_SUCCESS;
