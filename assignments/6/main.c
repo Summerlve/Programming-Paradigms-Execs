@@ -45,7 +45,7 @@ int SearchForAvailableTA(void)
 
     for (int i = 0; i < NUM_TAS; i++)
     {
-        if (tas[i].available == true) 
+        if (tas[i].available == true)
         {
             ta = i;
             break;
@@ -53,7 +53,7 @@ int SearchForAvailableTA(void)
     }
 
     ta = RandomInteger(0, NUM_TAS - 1);
-    
+
     return ta;
 }
 
@@ -83,6 +83,8 @@ void *TA(void *args)
 {
     int ta = *(((int **)args)[1]);
 
+    printf("TA[%d] starts running\n");
+
     while (isFinished == false)
     {
         SemaphoreWait(tas[ta].requested);
@@ -91,7 +93,7 @@ void *TA(void *args)
         ReadEmail();
     }
 
-    printf("TA: I can go home now\n");
+    printf("TA[%d]: I can go home now\n", ta);
     return NULL;
 }
 
@@ -99,24 +101,24 @@ void *Student(void *args)
 {
     int bugs = 1; // assume is just one bug initially
     int ta;
-    SemaphoreWait(Computers);
 
+    printf("Student starts running\n");
+
+    SemaphoreWait(Computers);
     while (bugs != 0 && bugs < 10)
     {
         Debug();
         ta = SearchForAvailableTA();
+        printf("Student: waiting for TA[%d]\n", ta);
         SemaphoreWait(tas[ta].lock);
         tas[ta].available = false;
         SemaphoreSignal(tas[ta].requested);
         SemaphoreWait(tas[ta].finished);
         bugs = tas[ta].bugs;
     }
-
     SemaphoreSignal(Computers); // realse computer
     SemaphoreSignal(tas[ta].lock); // realse ta
-
     Rejoice();
-
     PROTECT(
         StudentCounter ++;
         if (StudentCounter == NUM_STUDENTS)
@@ -141,6 +143,7 @@ int main(int argc, char **argv)
     for(int i = 0; i < NUM_TAS; i++) {
         int *ta_index = malloc(sizeof(int));
         *ta_index = i;
+        printf("%d", *ta_index);
         ThreadNew("TA", TA, 1, ta_index);
     }
     for(int i = 0; i < NUM_STUDENTS; i++) ThreadNew("Student", Student, 0);
