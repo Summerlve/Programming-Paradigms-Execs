@@ -19,10 +19,12 @@ SingleTA tas[NUM_TAS];
 Semaphore Computers;
 int StudentCounter = 0;
 bool isFinished = false;
+Semaphore TAFinished;
 
 void SetSomeSemaphore(void)
 {
-    Computers =  SemaphoreNew("Computer", NUM_MACHINES);
+    Computers = SemaphoreNew("Computer", NUM_MACHINES);
+    TAFinished = SemaphoreNew("TAFinished", 0);
     for (int i = 0; i < NUM_TAS; i++)
     {
         tas[i].lock = SemaphoreNew("TA_LOCK", 1);
@@ -83,7 +85,7 @@ void *TA(void *args)
 {
     int ta = *(((int **)args)[1]);
 
-    printf("TA[%d] starts running\n");
+    printf("TA[%d] starts running\n", ta);
 
     while (isFinished == false)
     {
@@ -94,6 +96,8 @@ void *TA(void *args)
     }
 
     printf("TA[%d]: I can go home now\n", ta);
+    SemaphoreSignal(TAFinished);
+
     return NULL;
 }
 
@@ -101,10 +105,11 @@ void *Student(void *args)
 {
     int bugs = 1; // assume is just one bug initially
     int ta;
+    int stu = *(((int **)args)[1]);
 
-    printf("Student starts running\n");
+    printf("Student[%d] starts running\n", stu);
 
-    SemaphoreWait(Computers);
+    // SemaphoreWait(Computers);
     while (bugs != 0 && bugs < 10)
     {
         Debug();
@@ -115,6 +120,7 @@ void *Student(void *args)
         SemaphoreSignal(tas[ta].requested);
         SemaphoreWait(tas[ta].finished);
         bugs = tas[ta].bugs;
+        printf("Student: bugs is %d\n", bugs);
     }
     SemaphoreSignal(Computers); // realse computer
     SemaphoreSignal(tas[ta].lock); // realse ta
@@ -140,13 +146,17 @@ int main(int argc, char **argv)
     InitThreadPackage(false);
     srand(time(NULL)); // random seed init, should only be called once.
     SetSomeSemaphore();
-    for(int i = 0; i < NUM_TAS; i++) {
+    for (int i = 0; i < NUM_TAS; i++) {
         int *ta_index = malloc(sizeof(int));
         *ta_index = i;
-        printf("%d", *ta_index);
         ThreadNew("TA", TA, 1, ta_index);
     }
-    for(int i = 0; i < NUM_STUDENTS; i++) ThreadNew("Student", Student, 0);
+    for (int i = 0; i < NUM_STUDENTS; i++) {
+        int *stu_index = malloc(sizeof(int));
+        *stu_index = i;
+        ThreadNew("Student", Student, 1, stu_index);
+    }
     RunAllThreads();
+    for (int i = 0; i < NUM_TAS; i++) SemaphoreWait(TAFinished);
     return EXIT_SUCCESS;
 }
