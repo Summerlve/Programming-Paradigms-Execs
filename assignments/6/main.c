@@ -18,7 +18,7 @@ typedef struct {
 SingleTA tas[NUM_TAS];
 Semaphore Computers;
 int StudentCounter = 0;
-bool isFinished = false;
+bool isFinished = false; 
 Semaphore TAFinished;
 
 void SetSomeSemaphore(void)
@@ -45,6 +45,8 @@ int SearchForAvailableTA(void)
 {
     int ta;
 
+    ta = RandomInteger(0, NUM_TAS - 1);
+
     for (int i = 0; i < NUM_TAS; i++)
     {
         if (tas[i].available == true)
@@ -53,8 +55,6 @@ int SearchForAvailableTA(void)
             break;
         }
     }
-
-    ta = RandomInteger(0, NUM_TAS - 1);
 
     return ta;
 }
@@ -91,6 +91,7 @@ void *TA(void *args)
     {
         SemaphoreWait(tas[ta].requested);
         tas[ta].bugs = Examine();
+        printf("TA[%d] found %d bugs", tas[ta].bugs, ta);
         SemaphoreSignal(tas[ta].finished);
         ReadEmail();
     }
@@ -109,18 +110,20 @@ void *Student(void *args)
 
     printf("Student[%d] starts running\n", stu);
 
-    // SemaphoreWait(Computers);
+    SemaphoreWait(Computers);
+
     while (bugs != 0 && bugs < 10)
     {
+        printf("Student[%d]: bugs is %d\n", stu, bugs);
         Debug();
         ta = SearchForAvailableTA();
-        printf("Student: waiting for TA[%d]\n", ta);
+        printf("Student[%d]: waiting for TA[%d]\n", stu, ta);
         SemaphoreWait(tas[ta].lock);
         tas[ta].available = false;
         SemaphoreSignal(tas[ta].requested);
+        printf("Student[%d]: requesting for TA[%d]\n", stu, ta);
         SemaphoreWait(tas[ta].finished);
         bugs = tas[ta].bugs;
-        printf("Student: bugs is %d\n", bugs);
     }
     SemaphoreSignal(Computers); // realse computer
     SemaphoreSignal(tas[ta].lock); // realse ta
