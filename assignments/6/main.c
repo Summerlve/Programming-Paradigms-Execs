@@ -7,56 +7,24 @@
 #define NUM_STUDENTS 115
 #define NUM_MACHINES 20
 
-typedef struct {
-    Semaphore lock;
-    Semaphore requested;
-    Semaphore finished;
-    int bugs;
-    bool available;
-} SingleTA;
+struct {
+    Semaphore lock; // set to 1
+    Semaphore requested; // set to 0
+    Semaphore finished; // set to 0
+    int bugs; // set to 0
+    bool available; // set to true
+} tas[NUM_TAS];
 
-SingleTA tas[NUM_TAS];
-Semaphore Computers;
-int StudentCounter = 0;
-bool isFinished = false; 
-Semaphore TAFinished;
-
-void SetSomeSemaphore(void)
-{
-    Computers = SemaphoreNew("Computer", NUM_MACHINES);
-    TAFinished = SemaphoreNew("TAFinished", 0);
-    for (int i = 0; i < NUM_TAS; i++)
-    {
-        tas[i].lock = SemaphoreNew("TA_LOCK", 1);
-        tas[i].requested = SemaphoreNew("TA_REQUESTED", 0);
-        tas[i].finished = SemaphoreNew("TA_FINISHED", 0);
-        tas[i].bugs = 0;
-        tas[i].available = true;
-    }
-}
+static Semaphore Computers; // set to NUM_MACHINES
+static Semaphore TAs; // set to NUM_TAS
+static int StudentCounter = 0;
+static Semaphore StudentCounterLock; // set to 1
+Semaphore TAFinished; // set to 0, waiting for NUM_TAS
 
 static int RandomInteger(int min, int max)
 {
     int value = rand() % (max + 1 - min) + min;
     return value;
-}
-
-int SearchForAvailableTA(void)
-{
-    int ta;
-
-    ta = RandomInteger(0, NUM_TAS - 1);
-
-    for (int i = 0; i < NUM_TAS; i++)
-    {
-        if (tas[i].available == true)
-        {
-            ta = i;
-            break;
-        }
-    }
-
-    return ta;
 }
 
 static int Examine(void)
@@ -81,15 +49,16 @@ static void Rejoice(void)
     printf("Student rejoice\n");
 }
 
-void *TA(void *args)
+static void *TA(void *args)
 {
     int ta = *(((int **)args)[1]);
 
     printf("TA[%d] starts running\n", ta);
 
-    while (isFinished == false)
+    while (true)
     {
         SemaphoreWait(tas[ta].requested);
+        if (StudentCounter == NUM_STUDENTS) break;
         tas[ta].bugs = Examine();
         printf("TA[%d] found %d bugs", tas[ta].bugs, ta);
         SemaphoreSignal(tas[ta].finished);
@@ -102,7 +71,7 @@ void *TA(void *args)
     return NULL;
 }
 
-void *Student(void *args)
+static void *Student(void *args)
 {
     int bugs = 1; // assume is just one bug initially
     int ta;
@@ -112,36 +81,63 @@ void *Student(void *args)
 
     SemaphoreWait(Computers);
 
-    while (bugs != 0 && bugs < 10)
+    while (bugs > 0 && bugs < 10)
     {
         printf("Student[%d]: bugs is %d\n", stu, bugs);
         Debug();
-        ta = SearchForAvailableTA();
+        SemaphoreWait(TAs);
+        for (ta = 0; ta < NUM_TAS; ta++)
+        {
+            SemaphoreWait(tas[ta].lock);
+            if(tas[ta].available) break;
+            SemaphoreWait(tas[ta].lock);
+        }
         printf("Student[%d]: waiting for TA[%d]\n", stu, ta);
-        SemaphoreWait(tas[ta].lock);
         tas[ta].available = false;
+        SemaphoreSignal(tas[ta].lock);
         SemaphoreSignal(tas[ta].requested);
         printf("Student[%d]: requesting for TA[%d]\n", stu, ta);
         SemaphoreWait(tas[ta].finished);
         bugs = tas[ta].bugs;
+        tas[ta].available = true;
+        SemaphoreSignal(TAs);
     }
-    SemaphoreSignal(Computers); // realse computer
-    SemaphoreSignal(tas[ta].lock); // realse ta
-    Rejoice();
-    PROTECT(
-        StudentCounter ++;
-        if (StudentCounter == NUM_STUDENTS)
+
+    if (bugs == 0) Rejoice();
+
+    SemaphoreWait(StudentCounterLock);
+    StudentCounter ++;
+    bool done = (StudentCounter == NUM_STUDENTS);
+    SemaphoreSignal(StudentCounterLock);
+
+    if (done)
+    {
+        for (ta = 0; ta < NUM_TAS; ta++)
         {
-            isFinished = true;
-            printf("The last student: wake up all the TAs to tell them that they can all go home");
-            for (int i = 0; i < NUM_TAS; i++)
-            {
-                SemaphoreSignal(tas[i].requested);
-            }
+            SemaphoreSignal(tas[ta].requested);
         }
-    )
+    }
+    
+    SemaphoreSignal(Computers); // realse computer
 
     return NULL;
+}
+
+void SetSomeSemaphore(void)
+{
+    Computers = SemaphoreNew("Computer", NUM_MACHINES);
+    TAs = SemaphoreNew("TA", NUM_TAS);
+    TAFinished = SemaphoreNew("TAFinished", 0);
+    StudentCounterLock = SemaphoreNew("CounterLock", 1);
+    for (int i = 0; i < NUM_TAS; i++)
+    {
+        printf("tas[%d] initnalizing\n", i);
+        tas[i].lock = SemaphoreNew("TA_LOCK", 1);
+        tas[i].requested = SemaphoreNew("TA_REQUESTED", 0);
+        tas[i].finished = SemaphoreNew("TA_FINISHED", 0);
+        tas[i].bugs = 0;
+        tas[i].available = true;
+    }
 }
 
 int main(int argc, char **argv)
