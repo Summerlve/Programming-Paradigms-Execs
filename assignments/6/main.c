@@ -23,7 +23,11 @@ Semaphore TAFinished; // set to 0, waiting for NUM_TAS
 
 static int RandomInteger(int min, int max)
 {
-    int value = rand() % (max + 1 - min) + min;
+    int value = 0;
+    PROTECT(
+        value = rand() % (max + 1 - min) + min;
+    )
+    fprintf(stdout, "Random result is: %d\n", value);
     return value;
 }
 
@@ -36,38 +40,37 @@ static int Examine(void)
 
 static void ReadEmail(void)
 {
-    printf("TA is reading email\n");
+    fprintf(stdout, "TA is reading email\n");
 }
 
-static void Debug(void)
+static void Debug()
 {
-    printf("Student is debuging\n");
+    fprintf(stdout, "Student is debuging\n");
 }
 
 static void Rejoice(void)
 {
-    printf("Student rejoice\n");
+    fprintf(stdout, "Student rejoice\n");
 }
 
 static void *TA(void *args)
 {
     int ta = *(((int **)args)[1]);
-
-    printf("TA[%d] starts running\n", ta);
+    fprintf(stdout, "TA[%d] starts running\n", ta);
 
     while (true)
     {
         SemaphoreWait(tas[ta].requested);
         if (StudentCounter == NUM_STUDENTS) break;
         tas[ta].bugs = Examine();
-        printf("TA[%d] found %d bugs", tas[ta].bugs, ta);
+        fprintf(stdout, "TA[%d] found %d bugs\n", tas[ta].bugs, ta);
         SemaphoreSignal(tas[ta].finished);
         ReadEmail();
     }
 
-    printf("TA[%d]: I can go home now\n", ta);
+    fprintf(stdout, "TA[%d]: I can go home now\n", ta);
     SemaphoreSignal(TAFinished);
-
+    free((((int **)args)[1]));
     return NULL;
 }
 
@@ -77,26 +80,27 @@ static void *Student(void *args)
     int ta;
     int stu = *(((int **)args)[1]);
 
-    printf("Student[%d] starts running\n", stu);
+    fprintf(stdout, "Student[%d] starts running\n", stu);
 
     SemaphoreWait(Computers);
 
-    while (bugs > 0 && bugs < 10)
+    while ((bugs > 0) && (bugs < 10))
     {
-        printf("Student[%d]: bugs is %d\n", stu, bugs);
+        fprintf(stdout, "Student[%d]: bugs is %d\n", stu, bugs);
         Debug();
         SemaphoreWait(TAs);
+        fprintf(stdout, "Student[%d] I got one TA\n", stu);
         for (ta = 0; ta < NUM_TAS; ta++)
         {
             SemaphoreWait(tas[ta].lock);
             if(tas[ta].available) break;
             SemaphoreWait(tas[ta].lock);
         }
-        printf("Student[%d]: waiting for TA[%d]\n", stu, ta);
+        fprintf(stdout, "Student[%d]: waiting for TA[%d]\n", stu, ta);
         tas[ta].available = false;
         SemaphoreSignal(tas[ta].lock);
         SemaphoreSignal(tas[ta].requested);
-        printf("Student[%d]: requesting for TA[%d]\n", stu, ta);
+        fprintf(stdout, "Student[%d]: requesting for TA[%d]\n", stu, ta);
         SemaphoreWait(tas[ta].finished);
         bugs = tas[ta].bugs;
         tas[ta].available = true;
@@ -119,19 +123,18 @@ static void *Student(void *args)
     }
     
     SemaphoreSignal(Computers); // realse computer
-
+    free((((int **)args)[1]));
     return NULL;
 }
 
-void SetSomeSemaphore(void)
+void SetSomeSemaphores(void)
 {
-    Computers = SemaphoreNew("Computer", NUM_MACHINES);
     TAs = SemaphoreNew("TA", NUM_TAS);
+    Computers = SemaphoreNew("Computer", NUM_MACHINES);
     TAFinished = SemaphoreNew("TAFinished", 0);
     StudentCounterLock = SemaphoreNew("CounterLock", 1);
     for (int i = 0; i < NUM_TAS; i++)
     {
-        printf("tas[%d] initnalizing\n", i);
         tas[i].lock = SemaphoreNew("TA_LOCK", 1);
         tas[i].requested = SemaphoreNew("TA_REQUESTED", 0);
         tas[i].finished = SemaphoreNew("TA_FINISHED", 0);
@@ -144,7 +147,7 @@ int main(int argc, char **argv)
 {
     InitThreadPackage(false);
     srand(time(NULL)); // random seed init, should only be called once.
-    SetSomeSemaphore();
+    SetSomeSemaphores();
     for (int i = 0; i < NUM_TAS; i++) {
         int *ta_index = malloc(sizeof(int));
         *ta_index = i;
@@ -157,5 +160,7 @@ int main(int argc, char **argv)
     }
     RunAllThreads();
     for (int i = 0; i < NUM_TAS; i++) SemaphoreWait(TAFinished);
+    FreeThreadPackage();
+    fprintf(stdout, "All things done\n");
     return EXIT_SUCCESS;
 }
