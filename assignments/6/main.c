@@ -8,7 +8,7 @@
 #define NUM_MACHINES 20
 
 struct {
-    Semaphore lock; // set to 1
+    Semaphore availLock; // set to 1
     Semaphore requested; // set to 0
     Semaphore finished; // set to 0
     int bugs; // set to 0
@@ -23,10 +23,7 @@ Semaphore TAFinished; // set to 0, waiting for NUM_TAS
 
 static int RandomInteger(int min, int max)
 {
-    int value = 0;
-    PROTECT(
-        value = rand() % (max + 1 - min) + min;
-    )
+    int value = rand() % (max + 1 - min) + min;
     fprintf(stdout, "Random result is: %d\n", value);
     return value;
 }
@@ -90,15 +87,16 @@ static void *Student(void *args)
         Debug();
         SemaphoreWait(TAs);
         fprintf(stdout, "Student[%d] I got one TA\n", stu);
-        for (ta = 0; ta < NUM_TAS; ta++)
+        for (ta = 0; ta < NUM_TAS + 1; ta++)
         {
-            SemaphoreWait(tas[ta].lock);
+            ta = ta % NUM_TAS;
+            SemaphoreWait(tas[ta].availLock);
             if(tas[ta].available) break;
-            SemaphoreWait(tas[ta].lock);
+            SemaphoreSignal(tas[ta].availLock);
         }
         fprintf(stdout, "Student[%d]: waiting for TA[%d]\n", stu, ta);
         tas[ta].available = false;
-        SemaphoreSignal(tas[ta].lock);
+        SemaphoreSignal(tas[ta].availLock);
         SemaphoreSignal(tas[ta].requested);
         fprintf(stdout, "Student[%d]: requesting for TA[%d]\n", stu, ta);
         SemaphoreWait(tas[ta].finished);
@@ -127,15 +125,15 @@ static void *Student(void *args)
     return NULL;
 }
 
-void SetSomeSemaphores(void)
+static void SetSomeSemaphores(void)
 {
-    TAs = SemaphoreNew("TA", NUM_TAS);
-    Computers = SemaphoreNew("Computer", NUM_MACHINES);
+    TAs = SemaphoreNew("TAs", NUM_TAS);
+    Computers = SemaphoreNew("Computers", NUM_MACHINES);
     TAFinished = SemaphoreNew("TAFinished", 0);
     StudentCounterLock = SemaphoreNew("CounterLock", 1);
     for (int i = 0; i < NUM_TAS; i++)
     {
-        tas[i].lock = SemaphoreNew("TA_LOCK", 1);
+        tas[i].availLock = SemaphoreNew("TA_LOCK", 1);
         tas[i].requested = SemaphoreNew("TA_REQUESTED", 0);
         tas[i].finished = SemaphoreNew("TA_FINISHED", 0);
         tas[i].bugs = 0;
@@ -151,12 +149,16 @@ int main(int argc, char **argv)
     for (int i = 0; i < NUM_TAS; i++) {
         int *ta_index = malloc(sizeof(int));
         *ta_index = i;
-        ThreadNew("TA", TA, 1, ta_index);
+        char ta_str[16];
+        sprintf(ta_str, "TA[%d]", i);
+        ThreadNew(ta_str, TA, 1, ta_index);
     }
     for (int i = 0; i < NUM_STUDENTS; i++) {
         int *stu_index = malloc(sizeof(int));
         *stu_index = i;
-        ThreadNew("Student", Student, 1, stu_index);
+        char stu_str[16];
+        sprintf(stu_str, "Student[%d]", i);
+        ThreadNew(stu_str, Student, 1, stu_index);
     }
     RunAllThreads();
     for (int i = 0; i < NUM_TAS; i++) SemaphoreWait(TAFinished);

@@ -196,7 +196,7 @@ Semaphore SemaphoreNew(const char *debugName, int initialValue)
 
     Semaphore sem = malloc(sizeof(struct SemaphoreImplementation));
     // sem_init is not available in macOS, use sem_open instead it.
-    sem_t *__semaphore__ = sem_open(debugName, O_CREAT, 0644, initialValue);
+    sem_t *__semaphore__ = sem_open(debugName, O_CREAT, 0600, initialValue);
     if (__semaphore__ == SEM_FAILED) perror("sem_open error");
     sem->__semaphore__ = __semaphore__;
     sem->debugName = malloc(strlen(debugName) + 1);
