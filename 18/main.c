@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#define __APPLE__
 #include "../16/thread_107/thread_107.h"
 
 struct{

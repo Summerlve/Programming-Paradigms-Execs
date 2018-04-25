@@ -2,11 +2,19 @@
 #define __THREAD_107_H
 
 #include <pthread.h>
+#ifdef __APPLE__
+#include <dispatch/dispatch.h>
+#else
 #include <semaphore.h>
+#endif
 #include <stdbool.h>
 
 struct SemaphoreImplementation {
+    #ifdef __APPLE__
+    dispatch_semaphore_t *__semaphore__;
+    #else
     sem_t *__semaphore__;
+    #endif
     const char *debugName;
 };
 

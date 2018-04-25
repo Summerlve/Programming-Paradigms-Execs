@@ -2,7 +2,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <pthread.h>
+#ifdef __APPLE__
+#include <dispatch/dispatch.h>
+#else
 #include <semaphore.h>
+#endif
 #include <string.h>
 #include <time.h>
 #include <stdarg.h>
@@ -196,8 +200,15 @@ Semaphore SemaphoreNew(const char *debugName, int initialValue)
 
     Semaphore sem = malloc(sizeof(struct SemaphoreImplementation));
     // sem_init is not available in macOS, use sem_open instead it.
-    sem_t *__semaphore__ = sem_open(debugName, O_CREAT, 0600, initialValue);
-    if (__semaphore__ == SEM_FAILED) perror("sem_open error");
+    #ifdef __APPLE__
+    dispatch_semaphore_t *__semaphore__ = malloc(sizeof(dispatch_semaphore_t));
+    *__semaphore__ = dispatch_semaphore_create(initialValue);
+    if (*__semaphore__ == NULL) perror("dispatch_semaphore_create error");
+    #else
+    sem_t *__semaphore__ = malloc(sizeof(sem_t)); 
+    int result = sem_init(__semaphore__, 0, initialValue);
+    if (result != 0) perror("sem_init error");
+    #endif
     sem->__semaphore__ = __semaphore__;
     sem->debugName = malloc(strlen(debugName) + 1);
     strcpy(sem->debugName, debugName);
@@ -218,21 +229,36 @@ const char *SemaphoreName(Semaphore s)
 
 void SemaphoreWait(Semaphore s)
 {
+    #ifdef __APPLE__
+    int result = dispatch_semaphore_wait(*(s->__semaphore__), DISPATCH_TIME_FOREVER);
+    if (result != 0) perror("dispatch_semaphore_wait error");
+    #else
     int result = sem_wait(s->__semaphore__);
     if (result != 0) perror("sem_wait error");
+    #endif
 }
 
 void SemaphoreSignal(Semaphore s)
 {
+    #ifdef __APPLE__
+    dispatch_semaphore_signal(*(s->__semaphore__));
+    #else
     int result = sem_post(s->__semaphore__);
     if (result != 0) perror("sem_post error");
+    #endif
 }
 
 void SemaphoreFree(Semaphore s)
 {
+    #ifdef __APPLE__
+
+    #else
     int result = sem_close(s->__semaphore__);
     if (result != 0) perror("sem_close error");
     free(s->debugName);
+    #endif
+    free(s->debugName);
+    free(s->__semaphore__);
 }
 
 void AcquireLibraryLock(void)
