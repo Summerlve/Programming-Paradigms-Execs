@@ -253,8 +253,8 @@ void SemaphoreFree(Semaphore s)
     #ifdef __APPLE__
 
     #else
-    int result = sem_close(s->__semaphore__);
-    if (result != 0) perror("sem_close error");
+    int result = sem_destroy(s->__semaphore__);
+    if (result != 0) perror("sem_destroy error");
     free(s->debugName);
     #endif
     free(s->debugName);
