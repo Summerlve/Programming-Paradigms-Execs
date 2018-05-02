@@ -205,9 +205,8 @@ Semaphore SemaphoreNew(const char *debugName, int initialValue)
     *__semaphore__ = dispatch_semaphore_create(initialValue);
     if (*__semaphore__ == NULL) perror("dispatch_semaphore_create error");
     #else
-    sem_t *__semaphore__ = malloc(sizeof(sem_t)); 
-    int result = sem_init(__semaphore__, 0, initialValue);
-    if (result != 0) perror("sem_init error");
+    sem_t *__semaphore__ = sem_open(debugName, O_CREAT, 0600, initialValue);
+    if (__semaphore__ == SEM_FAILED) perror("sem_open error");
     #endif
     sem->__semaphore__ = __semaphore__;
     sem->debugName = malloc(strlen(debugName) + 1);
@@ -251,14 +250,12 @@ void SemaphoreSignal(Semaphore s)
 void SemaphoreFree(Semaphore s)
 {
     #ifdef __APPLE__
-
+    free(s->__semaphore__);
     #else
-    int result = sem_destroy(s->__semaphore__);
-    if (result != 0) perror("sem_destroy error");
-    free(s->debugName);
+    int result = sem_close(s->__semaphore__);
+    if (result != 0) perror("sem_close error");
     #endif
     free(s->debugName);
-    free(s->__semaphore__);
 }
 
 void AcquireLibraryLock(void)
