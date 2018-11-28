@@ -7,7 +7,7 @@
             => (lambda (first-2-item-list)
                     (and 
                         (apply comp first-2-item-list) 
-                        (is-up-down? (cdr list) (if (eq? comp <) > <))))]))
+                        (is-up-down? (cdr list) (lambda (one two) (comp two one)))))]))
                 
 (println
     (is-up-down? '() <)) ;; #t
