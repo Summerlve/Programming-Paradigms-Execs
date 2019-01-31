@@ -18,7 +18,13 @@
                 )))])
     (filter (lambda (permutation) (if (= (length permutation) (length num-list)) #t #f)) (fn num-list))))
 
+(println 
+    (up-down-permute '()))
+(println 
+    (up-down-permute '(1)))
+(println
+    (up-down-permute '(1 2)))
 (println
     (up-down-permute '(1 2 3)))
 (println
-    (up-down-permute '(1 2 3 4)))
+    (up-down-permute '(1 2 3 4 5)))
