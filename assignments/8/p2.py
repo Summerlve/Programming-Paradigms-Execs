@@ -4,34 +4,61 @@ from random import choice, seed
 def getMaxPoints(gameBoard):
     # gameBoard is N x N list
     maxPoint = 0
+    N = len(gameBoard)
 
-    curmax = getMaxNumAndCoordFromGameBoard(gameBoard)
+    # list 'removedPoint' records removed point's coord infomation 
+    # [(1, 2), (3, 4)]
+    # every square is available in initial moment
+    removedPoint = []
+    curmax = getCurMaxFromGameBoard(gameBoard, removedPoint)
 
 
 
 
     return maxPoint
     
-def getMaxNumAndCoordFromGameBoard(gameBoard):
+def getCurMaxFromGameBoard(gameBoard, removedPoint):
     # gameBoard is N x N list
     N = len(gameBoard)
     maxNum = 0
-    coordx = coordy = -1
+    l = []
+    curmax = [] 
 
     for row in range(0, N):
         for col in range(0, N):
-            if gameBoard[row][col] > maxNum:
+            if gameBoard[row][col] >= maxNum:
                 maxNum = gameBoard[row][col]
-                coordx, coordy = row, col
-    
-    return {
-        "maxNum": maxNum,
-        "coord": (coordx, coordy)
-    }
+                l.append({
+                    "maxNum": maxNum,
+                    "coord": (row, col)
+                })
 
-def getNeighbors(gameBoard, coordX):
+    for i in range(0, len(l)):
+        if l[i]["maxNum"] == maxNum and not (l[i]["coord"]) in removedPoint:
+            curmax.append(l[i])
+
+    return curmax 
+
+def getNeighbors(N, coordValue):
+    # coordValue is a tuple: (x, y)
+    # N is NxN's N
     neighbors = []
-    N = len(gameBoard)
+    x, y = coordValue
+
+    if x - 1 >= 0:
+        if y - 1 >=0: neighbors.append((x - 1, y - 1))
+        neighbors.append((x - 1, y))
+        if y + 1 <= N - 1: neighbors.append((x - 1, y + 1))
+
+    if y - 1 >= 0:
+        neighbors.append((x, y - 1)) 
+    if y + 1 <= N - 1:
+        neighbors.append((x, y + 1))
+
+    if x + 1 <= N - 1:
+        if y - 1 >= 0: neighbors.append((x + 1, y - 1))
+        neighbors.append((x + 1, y))
+        if y + 1 <= N - 1: neighbors.append((x + 1, y + 1))
 
     return neighbors
 
