@@ -1,49 +1,61 @@
 #-*- coding:utf-8 -*-
 from random import choice, seed
 
-def getMaxPoints(gameBoard):
-    # gameBoard is N x N list
-    maxPoint = 0
-    N = len(gameBoard)
+def getMaxPoints(gameBoard, removedSquares, curPoints):
+    # gameBoard is a N x N list
 
-    # list 'removedPoint' records removed point's coord infomation 
-    # [(1, 2), (3, 4)]
+    # list 'removedSquare' records removed points' coord infomation 
+    # such as: [(1, 2), (3, 4)]
     # every square is available in initial moment
-    removedPoint = []
-    curmax = getCurMaxFromGameBoard(gameBoard, removedPoint)
 
+    # curPoints: current points sum
 
+    N = len(gameBoard)
+    curMaxSquares = getCurMaxSquaresFromGameBoard(gameBoard, removedSquares)
+    pointsCollection = []
 
+    for square in curMaxSquares:
+        if not square in removedSquares: removedSquares.append(square)            
+        for neighbor in getNeighbors(N, square):
+            if not neighbor in removedSquares:
+                removedSquares.append(neighbor)
+        row, col = square
+        curPoints += gameBoard[row][col] 
+        restPoints = getMaxPoints(gameBoard, list(removedSquares), 0)
+        curPoints += restPoints
+        pointsCollection.append(curPoints)
 
-    return maxPoint
-    
-def getCurMaxFromGameBoard(gameBoard, removedPoint):
+    if pointsCollection: return max(pointsCollection)
+    else: return 0
+
+def getCurMaxSquaresFromGameBoard(gameBoard, removedSquares):
+    # curMaxSquares is a list
+    # curMaxSquares and tempMaxSquares: [(0, 0), (1, 0)]
     # gameBoard is N x N list
     N = len(gameBoard)
-    maxNum = 0
-    l = []
-    curmax = [] 
+    maxPoint = 0
+    tempMaxSquares = []
+    curMaxSquares = [] 
 
     for row in range(0, N):
         for col in range(0, N):
-            if gameBoard[row][col] >= maxNum:
-                maxNum = gameBoard[row][col]
-                l.append({
-                    "maxNum": maxNum,
-                    "coord": (row, col)
-                })
+            if gameBoard[row][col] >= maxPoint and not (row, col) in removedSquares:
+                maxPoint = gameBoard[row][col]
+                tempMaxSquares.append((row, col))
+                
+    for i in range(0, len(tempMaxSquares)):
+        row, col = tempMaxSquares[i]
+        if gameBoard[row][col] == maxPoint :
+            curMaxSquares.append(tempMaxSquares[i])
 
-    for i in range(0, len(l)):
-        if l[i]["maxNum"] == maxNum and not (l[i]["coord"]) in removedPoint:
-            curmax.append(l[i])
+    return curMaxSquares 
 
-    return curmax 
-
-def getNeighbors(N, coordValue):
-    # coordValue is a tuple: (x, y)
+def getNeighbors(N, square):
+    # square is a tuple: (x, y)
     # N is NxN's N
+    # neighbors: [(0, 0), (0, 1),...]
     neighbors = []
-    x, y = coordValue
+    x, y = square
 
     if x - 1 >= 0:
         if y - 1 >=0: neighbors.append((x - 1, y - 1))
@@ -93,7 +105,7 @@ def genGameBoardFromInput():
     gameBoard = []
     return gameBoard
 
-def genRandomGameBoard():
+def genGameBoardInRandom():
     N = choice(range(3, 16)) # N belongs to [3, 15]
     gameBoard = []
 
@@ -105,4 +117,17 @@ def genRandomGameBoard():
     return gameBoard
     
 seed()
-gameBoard = genRandomGameBoard()
+# gameBoard = genGameBoardInRandom()
+gameBoard_1 = [
+    [71, 24, 95, 56, 54],
+    [85, 50, 74, 94, 28],
+    [92, 96, 23, 71, 10],
+    [23, 61, 31, 30, 46],
+    [64, 33, 32, 95, 89]
+]
+gameBoard_2 = [
+    [10, 10, 10],
+    [10, 10, 10],
+    [10, 10, 10]
+]
+print getMaxPoints(gameBoard_1, [], 0)
