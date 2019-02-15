@@ -1,14 +1,13 @@
 #-*- coding:utf-8 -*-
 from random import choice, seed
 
-def getMaxPoints(gameBoard, removedSquares, curPoints):
+# policy: get max point everytime from available squares, if it has serval max point square onetime, it will find the better way to get higher points
+def getMaxPoints(gameBoard, removedSquares):
     # gameBoard is a N x N list
 
     # list 'removedSquare' records removed points' coord infomation 
     # such as: [(1, 2), (3, 4)]
     # every square is available in initial moment
-
-    # curPoints: current points sum
 
     N = len(gameBoard)
     curMaxSquares = getCurMaxSquaresFromGameBoard(gameBoard, removedSquares)
@@ -20,8 +19,8 @@ def getMaxPoints(gameBoard, removedSquares, curPoints):
             if not neighbor in removedSquares:
                 removedSquares.append(neighbor)
         row, col = square
-        curPoints += gameBoard[row][col] 
-        restPoints = getMaxPoints(gameBoard, list(removedSquares), 0)
+        curPoints = gameBoard[row][col] 
+        restPoints = getMaxPoints(gameBoard, list(removedSquares) )
         curPoints += restPoints
         pointsCollection.append(curPoints)
 
@@ -117,17 +116,57 @@ def genGameBoardInRandom():
     return gameBoard
     
 seed()
-# gameBoard = genGameBoardInRandom()
-gameBoard_1 = [
+
+gameBoardTest_1 = [
+    [1, 1, 1],
+    [1, 1, 1],
+    [1, 1, 1]
+]
+gameBoardTest_2 = [
     [71, 24, 95, 56, 54],
     [85, 50, 74, 94, 28],
     [92, 96, 23, 71, 10],
     [23, 61, 31, 30, 46],
     [64, 33, 32, 95, 89]
 ]
-gameBoard_2 = [
-    [10, 10, 10],
-    [10, 10, 10],
-    [10, 10, 10]
+gameBoardTest_3 = [
+    [78, 78, 11, 55, 20, 11],
+    [98, 54, 81, 43, 39, 97],
+    [12, 15, 79, 99, 58, 10],
+    [13, 79, 83, 65, 34, 17],
+    [85, 59, 61, 12, 58, 97],
+    [40, 63, 97, 85, 66, 90]
 ]
-print getMaxPoints(gameBoard_1, [], 0)
+gameBoardTest_4 = [
+    [33, 49, 78, 79, 30, 16, 34, 88, 54, 39, 26],
+    [80, 21, 32, 71, 89, 63, 39, 52, 90, 14, 89],
+    [49, 66, 33, 19, 45, 61, 31, 29, 84, 98, 58],
+    [36, 53, 35, 33, 88, 90, 19, 23, 76, 23, 76],
+    [77, 27, 25, 42, 70, 36, 35, 91, 17, 79, 43],
+    [33, 85, 33, 59, 47, 46, 63, 75, 98, 96, 55],
+    [75, 88, 10, 57, 85, 71, 34, 10, 59, 84, 45],
+    [29, 34, 43, 46, 75, 28, 47, 63, 48, 16, 19],
+    [62, 57, 91, 85, 89, 70, 80, 30, 19, 38, 14],
+    [61, 35, 36, 20, 38, 18, 89, 64, 63, 88, 83],
+    [45, 46, 89, 53, 83, 59, 48, 45, 87, 98, 21],
+]
+gameBoardTest_5 = [
+    [15, 95, 24, 35, 79, 35, 55, 66, 91, 95, 86, 87],
+    [94, 15, 84, 42, 88, 83, 64, 50, 22, 99, 13, 32],
+    [85, 12, 43, 39, 41, 23, 35, 97, 54, 98, 18, 85],
+    [84, 61, 77, 96, 49, 38, 75, 95, 16, 71, 22, 14],
+    [18, 72, 97, 94, 43, 18, 59, 78, 33, 80, 68, 59],
+    [26, 94, 78, 87, 78, 92, 59, 83, 26, 88, 91, 91],
+    [34, 84, 53, 98, 83, 49, 60, 11, 55, 17, 51, 75],
+    [29, 80, 14, 79, 15, 18, 94, 39, 69, 24, 93, 41],
+    [66, 64, 88, 82, 21, 56, 16, 41, 57, 74, 51, 79],
+    [49, 15, 59, 21, 37, 27, 78, 41, 38, 82, 19, 62],
+    [54, 91, 47, 29, 38, 67, 52, 92, 81, 99, 11, 27],
+    [31, 62, 32, 97, 42, 93, 43, 79, 88, 44, 54, 48]
+]
+
+print getMaxPoints(gameBoardTest_1, [])
+print getMaxPoints(gameBoardTest_2, [])
+print getMaxPoints(gameBoardTest_3, [])
+print getMaxPoints(gameBoardTest_4, [])
+print getMaxPoints(gameBoardTest_5, [])
