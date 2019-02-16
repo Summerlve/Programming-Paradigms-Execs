@@ -1,7 +1,58 @@
 #-*- coding:utf-8 -*-
 from random import choice, seed
 
+# --- force algo start ---
+# force algo iterate everypath and figure out points, and get the max points
+def forceAlgo(gameBoard):
+    N = len(gameBoard)
+    pointsCollection = []
+
+    for row in range(0, N):
+        for col in range(0, N):
+            startSquare = (row, col)
+            points = 0
+            removedSquares = []
+
+            points += gameBoard[row][col]
+            removedSquares.append(startSquare)
+            for neighbor in getNeighbors(N, startSquare):
+                removedSquares.append(neighbor)
+            restPoints = figureOutRestPoints(gameBoard, removedSquares)
+            points += restPoints
+            print "startSquare: ", startSquare, "max point is: ", points
+            pointsCollection.append(points)
+            
+    return max(pointsCollection)
+
+def figureOutRestPoints(gameBoard, removedSquares):
+    N = len(gameBoard)
+    pointsCollection = [] 
+
+    for row in range(0, N):
+        for col in range(0, N):
+            removedSquaresInSubPath = list(removedSquares)
+            points = 0
+            curSquare = (row, col)
+            if curSquare in removedSquaresInSubPath: continue
+            removedSquaresInSubPath.append(curSquare) 
+            for neighbor in getNeighbors(N, curSquare):
+                if not neighbor in removedSquaresInSubPath:
+                    removedSquaresInSubPath.append(neighbor)
+            curPoints = gameBoard[row][col]
+            restPoints = figureOutRestPoints(gameBoard, list(removedSquaresInSubPath))
+            points = curPoints + restPoints
+            # print "in figureOutRestPoints, points: ", points
+            pointsCollection.append(points)
+
+    if pointsCollection: return max(pointsCollection)
+    else: return 0 
+# --- force algo end ---
+
+# --- choice max square everytime in available squares start ---
 # policy: get max point everytime from available squares, if it has serval max point square onetime, it will find the better way to get higher points
+def choiceMaxEveryTimeAlgo(gameBoard):
+    return getMaxPoints(gameBoard, [])
+    
 def getMaxPoints(gameBoard, removedSquares):
     # gameBoard is a N x N list
 
@@ -21,8 +72,7 @@ def getMaxPoints(gameBoard, removedSquares):
         row, col = square
         curPoints = gameBoard[row][col] 
         restPoints = getMaxPoints(gameBoard, list(removedSquares) )
-        curPoints += restPoints
-        pointsCollection.append(curPoints)
+        pointsCollection.append(curPoints + restPoints)
 
     if pointsCollection: return max(pointsCollection)
     else: return 0
@@ -48,6 +98,7 @@ def getCurMaxSquaresFromGameBoard(gameBoard, removedSquares):
             curMaxSquares.append(tempMaxSquares[i])
 
     return curMaxSquares 
+# --- choice max square everytime in available squares end ---
 
 def getNeighbors(N, square):
     # square is a tuple: (x, y)
@@ -104,7 +155,8 @@ def genGameBoardFromInput():
     gameBoard = []
     return gameBoard
 
-def genGameBoardInRandom():
+def genGameBoardFromRandom():
+    seed()
     N = choice(range(3, 16)) # N belongs to [3, 15]
     gameBoard = []
 
@@ -115,8 +167,6 @@ def genGameBoardInRandom():
 
     return gameBoard
     
-seed()
-
 gameBoardTest_1 = [
     [1, 1, 1],
     [1, 1, 1],
@@ -165,8 +215,17 @@ gameBoardTest_5 = [
     [31, 62, 32, 97, 42, 93, 43, 79, 88, 44, 54, 48]
 ]
 
-print getMaxPoints(gameBoardTest_1, [])
-print getMaxPoints(gameBoardTest_2, [])
-print getMaxPoints(gameBoardTest_3, [])
-print getMaxPoints(gameBoardTest_4, [])
-print getMaxPoints(gameBoardTest_5, [])
+print "Algo: choice max square everytime in available squares:"
+print choiceMaxEveryTimeAlgo(gameBoardTest_1)
+print choiceMaxEveryTimeAlgo(gameBoardTest_2)
+print choiceMaxEveryTimeAlgo(gameBoardTest_3)
+print choiceMaxEveryTimeAlgo(gameBoardTest_4)
+print choiceMaxEveryTimeAlgo(gameBoardTest_5)
+
+print "Algo: get every path and find out max points:"
+print "This algo is optimal solution"
+print forceAlgo(gameBoardTest_1)
+print forceAlgo(gameBoardTest_2)
+print forceAlgo(gameBoardTest_3)
+print forceAlgo(gameBoardTest_4)
+print forceAlgo(gameBoardTest_5)
