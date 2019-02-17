@@ -3,6 +3,62 @@ from random import choice, seed
 
 # --- force algo start ---
 # force algo iterate everypath and figure out points, and get the max points
+def forceAlgoReRe(gameBoard, restSquares = None):
+    N = len(gameBoard)
+    if restSquares is None:
+        restSquares = []
+        for row in range(0, N):
+            for col in range(0, N):
+                restSquares.append((row, col))
+    pointsCollection = []
+
+    for square in restSquares:
+        restSquaresInSubPath = list(restSquares)
+
+        restSquaresInSubPath.remove(square)
+        for neighbor in getNeighbors(N, square):
+           if neighbor in restSquaresInSubPath: restSquaresInSubPath.remove(neighbor)
+            
+        row, col = square 
+        points = 0
+        restPoints = 0
+        
+        # if len(restSquaresInSubPath) == 1:
+        #     lastOne = restSquaresInSubPath[0]
+        #     restSquaresInSubPath.remove(lastOne)
+        #     restPoints = gameBoard[lastOne[0]][lastOne[1]]
+        # elif len(restSquaresInSubPath) == 2:
+        #     squareA = restSquaresInSubPath[0]
+        #     squareB = restSquaresInSubPath[1]
+        #     pointA = gameBoard[squareA[0]][squareA[1]]
+        #     pointB = gameBoard[squareB[0]][squareB[1]]
+
+        #     isNb = isNeighbor(squareA, squareB)
+        #     if isNb:
+        #         restPoints = max(pointA, pointB)  
+        #     else:
+        #         restPoints = pointA + pointB
+
+        #     restSquaresInSubPath.remove(squareA)
+        #     restSquaresInSubPath.remove(squareB)
+        # else:
+        #     restPoints = forceAlgoReRe(gameBoard, list(restSquaresInSubPath))
+
+        restPoints = forceAlgoReRe(gameBoard, list(restSquaresInSubPath))
+        points += gameBoard[row][col]
+        points += restPoints
+        pointsCollection.append(points)
+
+    if pointsCollection: return max(pointsCollection)
+    else: return 0
+
+def getRestSquares(gameBoard, removedSquares):
+    rest = []
+    for square in gameBoard:
+        if not square in removedSquares:
+            rest.append(square) 
+    return rest
+
 def forceAlgoRe(gameBoard, removedSquares = None):
     if removedSquares is None: removedSquares = []
     N = len(gameBoard)
@@ -23,7 +79,6 @@ def forceAlgoRe(gameBoard, removedSquares = None):
             points += gameBoard[row][col]
             restPoints = forceAlgoRe(gameBoard, list(removedSquaresInSubPath))
             points += restPoints
-            # print "points is: ", points
             pointsCollection.append(points)
 
     if pointsCollection: return max(pointsCollection)
@@ -255,7 +310,11 @@ gameBoardTest_5 = [
 # print forceAlgo(gameBoardTest_3)
 # print forceAlgo(gameBoardTest_4)
 # print forceAlgo(gameBoardTest_5)
-print forceAlgoRe(gameBoardTest_1)
-print forceAlgoRe(gameBoardTest_2)
-print forceAlgoRe(gameBoardTest_3)
 
+# print forceAlgoRe(gameBoardTest_1)
+# print forceAlgoRe(gameBoardTest_2)
+# print forceAlgoRe(gameBoardTest_3)
+
+print forceAlgoReRe(gameBoardTest_1)
+print forceAlgoReRe(gameBoardTest_2)
+print forceAlgoReRe(gameBoardTest_3)
