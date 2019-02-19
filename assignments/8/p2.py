@@ -2,17 +2,33 @@
 from random import choice, seed
 
 # --- force algo start ---
-# force algo iterate everypath and figure out points, and get the max points
-def forceAlgoReRe(gameBoard, restSquares = None):
+# force algo iterate every path and figure out points, and get the max points
+def forceAlgoReRe(gameBoard, restSquares = None, startSquares = None):
     N = len(gameBoard)
+    isStart = False
+
     if restSquares is None:
         restSquares = []
         for row in range(0, N):
             for col in range(0, N):
                 restSquares.append((row, col))
-    pointsCollection = []
+    if startSquares is None:
+        startSquares = []
+        isStart = True
+        for row in range(0, N):
+            for col in range(0, N):
+                if col <= row:
+                    startSquares.append((row, col))
 
-    for square in restSquares:
+    pointsCollection = []
+    iterationSquares = []
+
+    if isStart:
+        iterationSquares = startSquares
+    else:
+        iterationSquares = restSquares
+
+    for square in iterationSquares:
         restSquaresInSubPath = list(restSquares)
 
         restSquaresInSubPath.remove(square)
@@ -22,29 +38,58 @@ def forceAlgoReRe(gameBoard, restSquares = None):
         row, col = square 
         points = 0
         restPoints = 0
-        
-        # if len(restSquaresInSubPath) == 1:
-        #     lastOne = restSquaresInSubPath[0]
-        #     restSquaresInSubPath.remove(lastOne)
-        #     restPoints = gameBoard[lastOne[0]][lastOne[1]]
-        # elif len(restSquaresInSubPath) == 2:
-        #     squareA = restSquaresInSubPath[0]
-        #     squareB = restSquaresInSubPath[1]
-        #     pointA = gameBoard[squareA[0]][squareA[1]]
-        #     pointB = gameBoard[squareB[0]][squareB[1]]
 
-        #     isNb = isNeighbor(squareA, squareB)
-        #     if isNb:
-        #         restPoints = max(pointA, pointB)  
-        #     else:
-        #         restPoints = pointA + pointB
+        if len(restSquaresInSubPath) == 0:
+            restPoints = 0      
+        elif len(restSquaresInSubPath) == 1:
+            lastOne = restSquaresInSubPath[0]
+            # restSquaresInSubPath.remove(lastOne)
+            restPoints = gameBoard[lastOne[0]][lastOne[1]]
+        elif len(restSquaresInSubPath) == 2:
+            squareA = restSquaresInSubPath[0]
+            squareB = restSquaresInSubPath[1]
+            pointA = gameBoard[squareA[0]][squareA[1]]
+            pointB = gameBoard[squareB[0]][squareB[1]]
 
-        #     restSquaresInSubPath.remove(squareA)
-        #     restSquaresInSubPath.remove(squareB)
-        # else:
-        #     restPoints = forceAlgoReRe(gameBoard, list(restSquaresInSubPath))
+            isNb = isNeighbor(squareA, squareB)
+            if isNb:
+                restPoints = max(pointA, pointB)  
+            else:
+                restPoints = pointA + pointB
 
-        restPoints = forceAlgoReRe(gameBoard, list(restSquaresInSubPath))
+            # restSquaresInSubPath.remove(squareA)
+            # restSquaresInSubPath.remove(squareB)
+        elif len(restSquaresInSubPath) == 3:
+            squareA = restSquaresInSubPath[0]
+            squareB = restSquaresInSubPath[1]
+            squareC = restSquaresInSubPath[2]
+            pointA = gameBoard[squareA[0]][squareA[1]]
+            pointB = gameBoard[squareB[0]][squareB[1]]
+            pointC = gameBoard[squareC[0]][squareC[1]]
+            
+            isAB = isNeighbor(squareA, squareB)                
+            isAC = isNeighbor(squareA, squareC)                
+            isBC = isNeighbor(squareB, squareC)                
+
+            if (not isAB) and (not isAC) and (not isBC):
+                restPoints = pointA + pointB + pointC
+            if isAB and (not isAC) and (not isBC):
+                restPoints = max(pointA, pointB) + pointC
+            if isAC and (not isAB) and (not isBC):
+                restPoints = max(pointA, pointC) + pointB 
+            if isBC and (not isAB) and (not isAC):
+                restPoints = max(pointB, pointC) + pointA
+            if isAC and isBC and (not isAB):
+                restPoints = max(pointA + pointB, pointC)
+            if isAB and isBC and (not isAC):
+                restPoints = max(pointA + pointC, pointB)
+            if isAB and isAC and (not isBC):
+                restPoints = max(pointB + pointC, pointA)
+            if isAB and isBC and isAC:
+                restPoints = max(pointA, pointB, pointC)
+        else:
+            restPoints = forceAlgoReRe(gameBoard, list(restSquaresInSubPath), [])
+
         points += gameBoard[row][col]
         points += restPoints
         pointsCollection.append(points)
@@ -315,6 +360,6 @@ gameBoardTest_5 = [
 # print forceAlgoRe(gameBoardTest_2)
 # print forceAlgoRe(gameBoardTest_3)
 
-print forceAlgoReRe(gameBoardTest_1)
-print forceAlgoReRe(gameBoardTest_2)
+# print forceAlgoReRe(gameBoardTest_1)
+# print forceAlgoReRe(gameBoardTest_2)
 print forceAlgoReRe(gameBoardTest_3)
