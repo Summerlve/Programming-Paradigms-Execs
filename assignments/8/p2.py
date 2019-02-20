@@ -23,14 +23,10 @@ def forceAlgoReRe(gameBoard, restSquares = None, startSquares = None):
                 for col in range(0, N):
                     if row <= floor(N / 2) and col <= row:
                         startSquares.append((row, col))
-                    if row > floor(N / 2) and col <= floor(N / 2) - (row - floor(N / 2)):
-                        startSquares.append((row, col))
         else:
             for row in range(0, N):
                 for col in range(0, N):
                     if row <= (N / 2)  - 1 and col <= row:
-                        startSquares.append((row, col))
-                    if row >= (N / 2) and col <= (N / 2) - (row - (N / 2) + 1):
                         startSquares.append((row, col))
 
     pointsCollection = []
@@ -56,7 +52,6 @@ def forceAlgoReRe(gameBoard, restSquares = None, startSquares = None):
             restPoints = 0      
         elif len(restSquaresInSubPath) == 1:
             lastOne = restSquaresInSubPath[0]
-            # restSquaresInSubPath.remove(lastOne)
             restPoints = gameBoard[lastOne[0]][lastOne[1]]
         elif len(restSquaresInSubPath) == 2:
             squareA = restSquaresInSubPath[0]
@@ -69,9 +64,6 @@ def forceAlgoReRe(gameBoard, restSquares = None, startSquares = None):
                 restPoints = max(pointA, pointB)  
             else:
                 restPoints = pointA + pointB
-
-            # restSquaresInSubPath.remove(squareA)
-            # restSquaresInSubPath.remove(squareB)
         elif len(restSquaresInSubPath) == 3:
             squareA = restSquaresInSubPath[0]
             squareB = restSquaresInSubPath[1]
@@ -158,7 +150,6 @@ def forceAlgo(gameBoard):
                 removedSquares.append(neighbor)
             restPoints = figureOutRestPoints(gameBoard, removedSquares)
             points += restPoints
-            print "startSquare: ", startSquare, "max point is: ", points
             pointsCollection.append(points)
             
     return max(pointsCollection)
@@ -180,7 +171,6 @@ def figureOutRestPoints(gameBoard, removedSquares):
             curPoints = gameBoard[row][col]
             restPoints = figureOutRestPoints(gameBoard, list(removedSquaresInSubPath))
             points = curPoints + restPoints
-            # print "in figureOutRestPoints, points: ", points
             pointsCollection.append(points)
 
     if pointsCollection: return max(pointsCollection)
@@ -357,19 +347,16 @@ gameBoardTest_5 = [
 print "Algo: choice max square everytime in available squares:"
 print choiceMaxEveryTimeAlgo(gameBoardTest_1)
 print choiceMaxEveryTimeAlgo(gameBoardTest_2)
-print choiceMaxEveryTimeAlgo(gameBoardTest_3)
-print choiceMaxEveryTimeAlgo(gameBoardTest_4)
-print choiceMaxEveryTimeAlgo(gameBoardTest_5)
 
 print "Algo: get every path and find out max points:"
 print "This algo is my solution"
 print forceAlgo(gameBoardTest_1)
-print forceAlgo(gameBoardTest_2)
 
 # forceAlgoRe
+print "forceAlgoRe:" 
 print forceAlgoRe(gameBoardTest_1)
-print forceAlgoRe(gameBoardTest_2)
 
 # forceAlgoReRe
+print "forceAlgoReRe:"
 print forceAlgoReRe(gameBoardTest_1)
 print forceAlgoReRe(gameBoardTest_2)
