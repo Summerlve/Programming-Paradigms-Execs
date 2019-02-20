@@ -1,5 +1,6 @@
 #-*- coding:utf-8 -*-
 from random import choice, seed
+from math import ceil, floor
 
 # --- force algo start ---
 # force algo iterate every path and figure out points, and get the max points
@@ -15,10 +16,22 @@ def forceAlgoReRe(gameBoard, restSquares = None, startSquares = None):
     if startSquares is None:
         startSquares = []
         isStart = True
-        for row in range(0, N):
-            for col in range(0, N):
-                if col <= row:
-                    startSquares.append((row, col))
+
+        isEven = N % 2 == 0
+        if not isEven:
+            for row in range(0, N):
+                for col in range(0, N):
+                    if row <= floor(N / 2) and col <= row:
+                        startSquares.append((row, col))
+                    if row > floor(N / 2) and col <= floor(N / 2) - (row - floor(N / 2)):
+                        startSquares.append((row, col))
+        else:
+            for row in range(0, N):
+                for col in range(0, N):
+                    if row <= (N / 2)  - 1 and col <= row:
+                        startSquares.append((row, col))
+                    if row >= (N / 2) and col <= (N / 2) - (row - (N / 2) + 1):
+                        startSquares.append((row, col))
 
     pointsCollection = []
     iterationSquares = []
@@ -341,25 +354,22 @@ gameBoardTest_5 = [
     [31, 62, 32, 97, 42, 93, 43, 79, 88, 44, 54, 48]
 ]
 
-# print "Algo: choice max square everytime in available squares:"
-# print choiceMaxEveryTimeAlgo(gameBoardTest_1)
-# print choiceMaxEveryTimeAlgo(gameBoardTest_2)
-# print choiceMaxEveryTimeAlgo(gameBoardTest_3)
-# print choiceMaxEveryTimeAlgo(gameBoardTest_4)
-# print choiceMaxEveryTimeAlgo(gameBoardTest_5)
+print "Algo: choice max square everytime in available squares:"
+print choiceMaxEveryTimeAlgo(gameBoardTest_1)
+print choiceMaxEveryTimeAlgo(gameBoardTest_2)
+print choiceMaxEveryTimeAlgo(gameBoardTest_3)
+print choiceMaxEveryTimeAlgo(gameBoardTest_4)
+print choiceMaxEveryTimeAlgo(gameBoardTest_5)
 
-# print "Algo: get every path and find out max points:"
-# print "This algo is optimal solution"
-# print forceAlgo(gameBoardTest_1)
-# print forceAlgo(gameBoardTest_2)
-# print forceAlgo(gameBoardTest_3)
-# print forceAlgo(gameBoardTest_4)
-# print forceAlgo(gameBoardTest_5)
+print "Algo: get every path and find out max points:"
+print "This algo is my solution"
+print forceAlgo(gameBoardTest_1)
+print forceAlgo(gameBoardTest_2)
 
-# print forceAlgoRe(gameBoardTest_1)
-# print forceAlgoRe(gameBoardTest_2)
-# print forceAlgoRe(gameBoardTest_3)
+# forceAlgoRe
+print forceAlgoRe(gameBoardTest_1)
+print forceAlgoRe(gameBoardTest_2)
 
-# print forceAlgoReRe(gameBoardTest_1)
-# print forceAlgoReRe(gameBoardTest_2)
-print forceAlgoReRe(gameBoardTest_3)
+# forceAlgoReRe
+print forceAlgoReRe(gameBoardTest_1)
+print forceAlgoReRe(gameBoardTest_2)
