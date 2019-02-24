@@ -1,9 +1,63 @@
 #-*- coding:utf-8 -*-
 from random import choice, seed
 from math import ceil, floor
+from copy import copy
+from copy import deepcopy
 
 # --- force algo start ---
 # force algo iterate every path and figure out points, and get the max points
+def finalAlgo(gameBoard, restSquares = None, startSquares = None, cache = None):
+    N = len(gameBoard)
+    isStarts = False
+
+    if restSquares is None:
+        restSquares = []
+        for row in range(0, N):
+            for col in range(0, N):
+                restSquares.append((row, col))
+        startSquares = deepcopy(restSquares) 
+        isStarts = True
+        cache = {}
+
+    if genKey(restSquares) in cache:
+        return cache[genKey(restSquares)]
+    
+    maxPoints = 0
+    iterationSquares = []
+
+    if isStarts:
+        iterationSquares = startSquares
+    else:
+        iterationSquares = restSquares
+
+    for square in iterationSquares:
+        restSquaresInSubPath = copy(restSquares)
+
+        restSquaresInSubPath.remove(square)
+
+        neighbors = []
+        if genKey(square) in cache:
+            neighbors = cache[genKey(square)]
+        else:
+            neighbors = getNeighbors(N, square)
+            cache[genKey(square)] = neighbors
+
+        for neighbor in neighbors:
+           if neighbor in restSquaresInSubPath: restSquaresInSubPath.remove(neighbor)
+            
+        row, col = square 
+        restPoints = finalAlgo(gameBoard, restSquaresInSubPath, [], cache)
+        points = gameBoard[row][col] + restPoints
+
+        if points > maxPoints:
+            maxPoints = points
+
+    cache[genKey(restSquares)] = maxPoints
+    return maxPoints
+    
+def genKey(x):
+    return str(x)
+
 def forceAlgoReRe(gameBoard, restSquares = None, startSquares = None):
     N = len(gameBoard)
     isStart = False
@@ -344,19 +398,26 @@ gameBoardTest_5 = [
     [31, 62, 32, 97, 42, 93, 43, 79, 88, 44, 54, 48]
 ]
 
-print "Algo: choice max square everytime in available squares:"
-print choiceMaxEveryTimeAlgo(gameBoardTest_1)
-print choiceMaxEveryTimeAlgo(gameBoardTest_2)
+# print "Algo: choice max square everytime in available squares:"
+# print choiceMaxEveryTimeAlgo(gameBoardTest_1)
+# print choiceMaxEveryTimeAlgo(gameBoardTest_2)
 
-print "Algo: get every path and find out max points:"
-print "This algo is my solution"
-print forceAlgo(gameBoardTest_1)
+# print "Algo: get every path and find out max points:"
+# print "This algo is my solution"
+# print forceAlgo(gameBoardTest_1)
 
-# forceAlgoRe
-print "forceAlgoRe:" 
-print forceAlgoRe(gameBoardTest_1)
+# # forceAlgoRe
+# print "forceAlgoRe:" 
+# print forceAlgoRe(gameBoardTest_1)
 
-# forceAlgoReRe
-print "forceAlgoReRe:"
-print forceAlgoReRe(gameBoardTest_1)
-print forceAlgoReRe(gameBoardTest_2)
+# # forceAlgoReRe
+# print "forceAlgoReRe:"
+# print forceAlgoReRe(gameBoardTest_1)
+# print forceAlgoReRe(gameBoardTest_2)
+
+# forceAlgoReReRe
+print finalAlgo(gameBoardTest_1)
+print finalAlgo(gameBoardTest_2)
+print finalAlgo(gameBoardTest_3)
+print finalAlgo(gameBoardTest_4)
+print finalAlgo(gameBoardTest_5)
