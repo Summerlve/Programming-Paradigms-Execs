@@ -1,0 +1,20 @@
+<root>
+    <title>Example</title>
+    <channel>
+        <item>
+            <title>This is title 1</title>
+        </item>
+        <item>
+            <title>This is title 2</title>
+        </item>
+        <item>
+            <title>This is title 3</title>
+        </item>
+        <item>
+            <title>This is title 4</title>
+        </item>
+        <item>
+            <title>This is title 5</title>
+        </item>
+    </channel>
+</root>
