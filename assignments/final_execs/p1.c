@@ -78,6 +78,12 @@ typedef struct {
     char *boy;
 } couple;
 
+void PrintCouple(void *valueAddr, void *auxData) {
+    char *girl = *(char **)valueAddr;
+    char *boy = *((char **)valueAddr + 1); 
+    printf("couple: (%s, %s)\n", girl, boy);
+}
+
 void StringFree(void *v) {
     char *name = *(char **)v;
     printf("name is: %s\n", name);
@@ -94,16 +100,62 @@ void CoupleFree(void *v) {
     free(boy);
 }
 
-vector *generateAllCouples(vector *boys, vector *girls) {
-    vector *couples = malloc(sizeof(vector));
-    VectorNew(couples, sizeof(couple), CoupleFree, 0);
+vector generateAllCouples(vector *boys, vector *girls) {
+    vector couples;
+    VectorNew(&couples, sizeof(couple), CoupleFree, 0);
 
+    int boysLength = VectorLength(boys);
+    int girlsLength = VectorLength(girls);
+
+    for (int i = 0; i < girlsLength; i++) {
+        char *girl = *(char **)(VectorNth(girls, i));
+        for (int j = 0; j < boysLength; j++) {
+            char *boy = *(char **)(VectorNth(boys, j));
+            couple c;
+            c.girl = malloc(strlen(girl) + 1);
+            strcpy(c.girl, girl);
+            c.boy = malloc(strlen(boy) + 1);
+            strcpy(c.boy, boy);
+            VectorAppend(&couples, &c);
+        }
+    }
+    
+    return couples; 
 }
 
 int main(int argc, char **argv) {
     vector boys, girls;
     VectorNew(&boys, sizeof(char *), StringFree, 0);
     VectorNew(&girls, sizeof(char *), StringFree, 0);
+
+    const char *boy_names[] = {
+        "boys_1",
+        "boys_2",
+        "boys_3",
+        "boys_4"
+    };  
+    const char *girl_names[] = {
+        "girl_1",
+        "girl_2",
+        "girl_3",
+        "girl_4"
+    };
     
+    for (int i = 0; i < 4; i++) {
+        char *boy = malloc(strlen(boy_names[i]) + 1);
+        memcpy(boy, boy_names[i], strlen(boy_names[i]) + 1);
+        VectorAppend(&boys, boy);
+        char *girl = malloc(strlen(girl_names[i]) + 1);
+        memcpy(girl, girl_names[i], strlen(girl_names[i]) + 1);
+        VectorAppend(&girls, girl);
+    }
+
+    vector couples = generateAllCouples(&boys, &girls); 
+    VectorMap(&couples, PrintCouple, NULL);
+
+    VectorFree(&boys);
+    VectorFree(&girls);
+    VectorFree(&couples);
+
     return 0;
 }
