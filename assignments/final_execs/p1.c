@@ -27,7 +27,14 @@ void VectorNew(vector *v, int elemSize, ElemFreeFunction elemFreeFn, int allocat
 
 void VectorExpand(vector *v)
 {
-    v->allocatedLength *= 2;
+    if (v->allocatedLength == 0)
+    { 
+        v->allocatedLength += 1;
+    }
+    else
+    {
+        v->allocatedLength *= 2;
+    }
     v->elems = realloc(v->elems, v->elemSize * v->allocatedLength);
     assert(v->elems != NULL);
 }
@@ -70,13 +77,17 @@ void VectorFree(vector *v) {
     }
 
     free(v->elems);
-    free(v);
 }
 
 typedef struct {
     char *girl;
     char *boy;
 } couple;
+
+void PrintName(void *valueAddr, void *auxData) {
+    char *name = *(char **)valueAddr;
+    printf("name: %s\n", name);
+}
 
 void PrintCouple(void *valueAddr, void *auxData) {
     char *girl = *(char **)valueAddr;
@@ -86,7 +97,7 @@ void PrintCouple(void *valueAddr, void *auxData) {
 
 void StringFree(void *v) {
     char *name = *(char **)v;
-    printf("name is: %s\n", name);
+    printf("freeing name is: %s\n", name);
     free(name);
 }
 
@@ -94,7 +105,7 @@ void CoupleFree(void *v) {
     char *girl = *(char **)v;
     char *boy = *((char **)v + 1); 
 
-    printf("freeing couple: (%s, %s)\n", girl, boy);
+    printf("freeing couple is: (%s, %s)\n", girl, boy);
     
     free(girl);
     free(boy);
@@ -129,10 +140,10 @@ int main(int argc, char **argv) {
     VectorNew(&girls, sizeof(char *), StringFree, 0);
 
     const char *boy_names[] = {
-        "boys_1",
-        "boys_2",
-        "boys_3",
-        "boys_4"
+        "boy_1",
+        "boy_2",
+        "boy_3",
+        "boy_4"
     };  
     const char *girl_names[] = {
         "girl_1",
@@ -144,10 +155,10 @@ int main(int argc, char **argv) {
     for (int i = 0; i < 4; i++) {
         char *boy = malloc(strlen(boy_names[i]) + 1);
         memcpy(boy, boy_names[i], strlen(boy_names[i]) + 1);
-        VectorAppend(&boys, boy);
+        VectorAppend(&boys, &boy);
         char *girl = malloc(strlen(girl_names[i]) + 1);
         memcpy(girl, girl_names[i], strlen(girl_names[i]) + 1);
-        VectorAppend(&girls, girl);
+        VectorAppend(&girls, &girl);
     }
 
     vector couples = generateAllCouples(&boys, &girls); 
