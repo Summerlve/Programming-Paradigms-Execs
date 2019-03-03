@@ -112,26 +112,23 @@ bool testIfMoreThan10(const void *elemAddr)
 typedef bool (*VectorSplitFunction)(const void *elemAddr);
 void VectorSplit(vector *original, vector *thoseThatPass, vector *thoseThatFail, VectorSplitFunction test)
 {
+    VectorNew(thoseThatPass, original->elemSize, original->free, 0);
+    VectorNew(thoseThatFail, original->elemSize, original->free, 0);
+    
     for (int i = 0; i < VectorLength(original); i++)
     {
         void *elemAddr = VectorNth(original, i);
-        if (test(elemAddr) == true)
-        {
-            VectorAppend(thoseThatPass, elemAddr);
-        }
-        else
-        {
-            VectorAppend(thoseThatFail, elemAddr);
-        }
+        if (test(elemAddr) == true) VectorAppend(thoseThatPass, elemAddr);
+        else VectorAppend(thoseThatFail, elemAddr);
     }
+
+    original->logiclLength = 0;
 }
 
 int main(int argc, char **argv)
 {
     vector numbers, pass, fail;
     VectorNew(&numbers, sizeof(int *), NumberFree, 0);
-    VectorNew(&pass, sizeof(int *), NumberFree, 0);
-    VectorNew(&fail, sizeof(int *), NumberFree, 0);
 
     for (int i = 0; i < 25; i++)
     {
