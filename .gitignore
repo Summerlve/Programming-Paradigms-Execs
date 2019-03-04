@@ -58,5 +58,3 @@ dkms.conf
 
 */log.txt
 log.txt
-*.pdf
-*/*.pdf
