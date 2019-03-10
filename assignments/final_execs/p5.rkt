@@ -20,7 +20,7 @@
 ; b)
 (define (map-everywhere func structure)
     (if (list? structure) 
-        (if (= (length structure) 0) structure
+        (if (null? structure) structure
             (cons
                 (map-everywhere func (car structure))
                 (map-everywhere func (cdr structure))))
