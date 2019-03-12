@@ -8,7 +8,8 @@
                           [elem2 (car seq2)])
                             (if (equal? elem1 elem2)
                                 (cons elem1 (inner-proc (cdr seq1) (cdr seq2))) '()))))])
-        (if (equal? (take seq1 2) (take seq2 2))
+        (if (and (not (or (< (length seq1) 2) (< (length seq2) 2)))
+                 (equal? (take seq1 2) (take seq2 2)))
             (append (take seq1 2) (inner-proc (list-tail seq1 2) (list-tail seq2 2))) '())))
 
 (println
@@ -31,6 +32,26 @@
     (mdp cdr '(2 1 2 8)))
 (println
     (mdp reverse '("ba" "de" "foo" "ga")))
-    
-; c)
 
+; c)
+;; quicksort algorithm, copy from wikipedia.
+(define (quicksort s comp)
+    (if (< (length s) 2) s
+        (append (quicksort (filter (lambda (e) (comp e (last s))) s) comp)
+                (filter (lambda (e) (= e (last s))) s)
+                (quicksort (filter (lambda (e) (comp (last s) e)) s) comp))))
+
+(define (longest-common-sublist seq1 seq2)
+    (car (quicksort (apply append (map (lambda (sublist-of-seq1) 
+                                    (map (lambda (sublist-of-seq2)
+                                        (longest-common-prefix sublist-of-seq1 sublist-of-seq2)) (mdp (lambda (x) x) seq2))) (mdp (lambda (x) x) seq2)))
+            (lambda (pre nxt)
+                (> (length pre)
+                   (length nxt))))))
+
+(println
+    (longest-common-sublist '(#\a #\b #\d #\f #\g #\j) '(#\b #\c #\d #\f #\g #\h #\j #\k)))
+(println
+    (longest-common-sublist '(#\a #\b #\c #\d) '(#\x #\y)))
+(println
+    (longest-common-sublist '(4 5 6 7 8 9 10) '(2 3 4 5 6 7 8)))
