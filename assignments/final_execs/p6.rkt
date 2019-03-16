@@ -35,18 +35,21 @@
 
 ; c)
 ;; quicksort algorithm, copy from wikipedia.
-(define (quicksort s comp)
+(define (quicksort s comp eq-fn)
     (if (< (length s) 2) s
-        (append (quicksort (filter (lambda (e) (comp e (last s))) s) comp)
-                (filter (lambda (e) (= e (last s))) s)
-                (quicksort (filter (lambda (e) (comp (last s) e)) s) comp))))
+        (append (quicksort (filter (lambda (e) (comp e (last s))) s) comp eq-fn)
+                (filter (lambda (e) (eq-fn e (last s))) s)
+                (quicksort (filter (lambda (e) (comp (last s) e)) s) comp eq-fn))))
 
 (define (longest-common-sublist seq1 seq2)
-    (car (quicksort (apply append (map (lambda (sublist-of-seq1) 
-                                    (map (lambda (sublist-of-seq2)
-                                        (longest-common-prefix sublist-of-seq1 sublist-of-seq2)) (mdp (lambda (x) x) seq2))) (mdp (lambda (x) x) seq2)))
+    (car (quicksort (apply append (mdp (lambda (sublist-of-seq1) 
+                                    (mdp (lambda (sublist-of-seq2)
+                                        (longest-common-prefix sublist-of-seq1 sublist-of-seq2)) seq2)) seq1))
             (lambda (pre nxt)
                 (> (length pre)
+                   (length nxt))) 
+            (lambda (pre nxt)
+                (= (length pre)
                    (length nxt))))))
 
 (println
