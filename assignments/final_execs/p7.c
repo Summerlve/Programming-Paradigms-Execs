@@ -12,15 +12,36 @@ int DownloadMediaFile(const char *server, const char *file)
     return 0;
 }
 
+void *DownloadMediaFileAdapter(void *args)
+{
+    const char *server = ((char **)args)[0];
+    const char *file = ((char **)args)[1];
+    int *filesSizeSumPointer = ((int **)args)[2];
+    Semaphore filesSizeSumLock = ((Semaphore **)args)[3];
+    Semaphore maxConnections = NULL;
+
+    SemaphoreWait(maxConnections);
+
+    int fileSize = DownloadMediaFile(server, file);
+
+    SemaphoreWait(filesSizeSumLock);
+    *filesSizeSumPointer += fileSize;
+    SemaphoreSignal(filesSizeSumLock);
+
+    SemaphoreSignal(maxConnections);
+}
+
 int DownloadMediaLibrary(const char *server, const char *files[], int numFiles)
 {
-    int files_size_sum = 0;
-    Semaphore max_connections = SemaphoreNew("max_connections", 12);
+    int filesSizeSum = 0;
+    Semaphore maxConnections = SemaphoreNew("maxConnections", 12);
     Semaphore files = SemaphoreNew("files", 0);
+    Semaphore filesSizeSumLock = SemaphoreNew("filesSizeSumLock", 1);
 
     for (int i = 0; i < numFiles; i++)
     {
-        ThreadNew("DownloadMediaFile", DownloadMediaFile, 2, server, files[i]);
+        ThreadNew("DownloadMediaFileAdapter", DownloadMediaFileAdapter, 5, server, files[i], &filesSizeSum,
+                                                                                &filesSizeSumLock, &maxConnections);
     }
 
     for (int i = 0; i < numFiles; i++)
@@ -28,7 +49,7 @@ int DownloadMediaLibrary(const char *server, const char *files[], int numFiles)
         SemaphoreWait(files);
     }
 
-    return files_size_sum;
+    return filesSizeSum;
 }
 
 int main(int argc, char **argv)
