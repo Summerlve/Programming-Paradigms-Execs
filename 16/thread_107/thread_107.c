@@ -1,3 +1,4 @@
+#include "thread_107.h"
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -12,15 +13,31 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <errno.h>
-#include "thread_107.h"
 
-bool traceFlag = true; // default value of traceFlag is true.
-pthread_mutex_t mutexLock; // mutex lock for AcquireLibraryLock API
-pthread_mutex_t threadNewLock; // mutex lock to protect shared infomations in threadPool when calling the ThreadNew
-pthread_mutex_t semaphoreNewLock; // mutex lock to protect shared infomations in threadPool when calling the SemaphoreNew
+typedef struct {
+    const char *debugName;
+    void *(*func)(void *);
+    void *args;
+    int nArg;
+    pthread_t tid;
+} ThreadInfo;
+
+typedef struct {
+    int logicalLength;
+    int allocatedLength;
+    ThreadInfo *threadInfos;
+    Semaphore *semaphores;
+    int semLogicalLength;
+    int semAllocatedLength;
+} ThreadPool;
+
+static bool traceFlag = true; // default value of traceFlag is true.
+static pthread_mutex_t mutexLock; // mutex lock for AcquireLibraryLock API
+static pthread_mutex_t threadNewLock; // mutex lock to protect shared infomations in threadPool when calling the ThreadNew
+static pthread_mutex_t semaphoreNewLock; // mutex lock to protect shared infomations in threadPool when calling the SemaphoreNew
 
 // extern threadPool from thread_107.h.
-extern struct ThreadPool threadPool;
+static ThreadPool threadPool;
 
 // for thread safety, you can call InitThreadPackage function only once in one thread(normally it will be the main thread)
 void InitThreadPackage(bool flag)

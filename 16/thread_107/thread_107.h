@@ -1,13 +1,13 @@
-#ifndef __THREAD_107_H
-#define __THREAD_107_H
+#ifndef THREAD_107_H
+#define THREAD_107_H
 
-#include <pthread.h>
 #ifdef __APPLE__
 #include <dispatch/dispatch.h>
 #else
 #include <semaphore.h>
 #endif
 #include <stdbool.h>
+#include <pthread.h>
 
 struct SemaphoreImplementation {
     #ifdef __APPLE__
@@ -19,23 +19,6 @@ struct SemaphoreImplementation {
 };
 
 typedef struct SemaphoreImplementation *Semaphore;
-
-typedef struct {
-    const char *debugName;
-    void *(*func)(void *);
-    void *args;
-    int nArg;
-    pthread_t tid;
-} ThreadInfo;
-
-struct ThreadPool{
-    int logicalLength;
-    int allocatedLength;
-    ThreadInfo *threadInfos;
-    Semaphore *semaphores;
-    int semLogicalLength;
-    int semAllocatedLength;
-} threadPool;
 
 void InitThreadPackage(bool traceFlag);
 void FreeThreadPackage();
