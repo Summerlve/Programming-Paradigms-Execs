@@ -1,34 +1,47 @@
 #include "../../16/thread_107/thread_107.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <curl/curl.h> // include curl for http request 
 #define __APPLE__
 
 int DownloadMediaFile(const char *server, const char *file)
 {
-    // TODO http/https request to server/file using c.
+    int fileSize = 0;
+
     CURL *curl;
     CURLcode res;
-    
     curl = curl_easy_init();
+    char *url = malloc(strlen(server) + strlen(file) + 1);
+    
+
     if (curl) {
         curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
+
+        FILE *devNull = fopen("/dev/null", "w+");
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, devNull);
         /* example.com is redirected, so we tell libcurl to follow redirection */ 
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
     
         /* Perform the request, res will get the return code */ 
         res = curl_easy_perform(curl);
+
         /* Check for errors */ 
-        if(res != CURLE_OK)
+        if (res != CURLE_OK)
         fprintf(stderr, "curl_easy_perform() failed: %s\n",
                 curl_easy_strerror(res));
     
+        // get the size of http body in bytes
+        double dl;
+        curl_easy_getinfo(curl, CURLINFO_SIZE_DOWNLOAD, &dl);
+        fileSize = (int)dl;
+
         /* always cleanup */ 
         curl_easy_cleanup(curl);
+        fclose(devNull);
     }
     
-    // TODO count size of downloaded content in bytes. 
-    return 0;
+    return fileSize;
 }
 
 void *DownloadMediaFileAdapter(void *args)
@@ -88,8 +101,14 @@ int main(int argc, char **argv)
         "file2"
     };
 
+    // init curl for multithread usage
+    curl_global_init(CURL_GLOBAL_ALL);
+
     int files_size_sum = DownloadMediaLibrary(server, files, 2); 
     fprintf(stdout, "files size sum: %d\n", files_size_sum);
+
+    // curl cleanup for multithread usage 
+    curl_global_cleanup();
 
     exit(EXIT_SUCCESS);
 }
