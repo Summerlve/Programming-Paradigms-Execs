@@ -5,6 +5,13 @@
 #include <curl/curl.h> // include curl for http request 
 #define __APPLE__
 
+char *stringCombine(char *dst, const char *pre, const char *nxt)
+{
+    memcpy(dst, pre, strlen(pre));
+    memcpy(dst + strlen(pre), nxt, strlen(nxt) + 1);
+    return dst;
+}
+
 int DownloadMediaFile(const char *server, const char *file)
 {
     int fileSize = 0;
@@ -13,10 +20,11 @@ int DownloadMediaFile(const char *server, const char *file)
     CURLcode res;
     curl = curl_easy_init();
     char *url = malloc(strlen(server) + strlen(file) + 1);
-    
+
+    stringCombine(url, server, file);
 
     if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, "https://example.com");
+        curl_easy_setopt(curl, CURLOPT_URL, url);
 
         FILE *devNull = fopen("/dev/null", "w+");
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, devNull);
@@ -95,16 +103,15 @@ int main(int argc, char **argv)
 {
     InitThreadPackage(false);
 
-    char server[] = "www.google.com";
+    char server[] = "http://www.example.com";
     const char *files[] = {
-        "file1",
-        "file2"
+        "/", "/", "/", "/", "/", "/", "/", "/", "/", "/", "/", "/", "/", "/" 
     };
 
     // init curl for multithread usage
     curl_global_init(CURL_GLOBAL_ALL);
 
-    int files_size_sum = DownloadMediaLibrary(server, files, 2); 
+    int files_size_sum = DownloadMediaLibrary(server, files, 14); 
     fprintf(stdout, "files size sum: %d\n", files_size_sum);
 
     // curl cleanup for multithread usage 
