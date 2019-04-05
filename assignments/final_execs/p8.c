@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <string.h>
 #define __APPLE__
 
 typedef struct {
@@ -17,6 +18,8 @@ Expression *evaluateExpression(Expression *expr)
         .value = "false"
     };
 
+    Expression ee;
+
     Expression *ep = (Expression *)malloc(sizeof(Expression));
     memcpy(ep, &e, sizeof(Expression));
     
@@ -28,17 +31,30 @@ void *evaluateExpressionAdapter(void *args)
     const char *debugName = NULL;
     Expression *e = NULL;
 
-    return evaluateExpression(e);
+    Expression *result = evaluateExpression(e);
 }
 
 Expression *evaluateConcurrentAnd(Expression *exprs[], int n)
 {
-    bool result = false;
+    Expression *e = (Expression *)malloc(sizeof(Expression));
+    e->type = Boolean;
+    strcpy(e->value, "true");
+    Semaphore resultLock = SemaphoreNew("resultLock", 1);
+    Semaphore done = SemaphoreNew("done", 0);
 
     for (int i = 0; i < n; i++) 
     {
         ThreadNew("evaluateExpression", evaluateExpressionAdapter, 1, exprs[i]);
     }
+
+    RunAllThreads();
+
+    for (int i = 0; i < n; i++)
+    {
+        SemaphoreWait(done);
+        if (strcmp(e->value, "false")) return e;
+    }
+
     return NULL;
 }
 
