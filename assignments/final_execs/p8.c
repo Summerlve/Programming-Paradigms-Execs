@@ -13,17 +13,11 @@ typedef struct {
 
 Expression *evaluateExpression(Expression *expr)
 {
-    Expression e = {
-        .type = Boolean,
-        .value = "false"
-    };
+    Expression *result = (Expression *)malloc(sizeof(Expression));
+    result->type = Boolean;
+    stpcpy(result->value, "true");
 
-    Expression ee;
-
-    Expression *ep = (Expression *)malloc(sizeof(Expression));
-    memcpy(ep, &e, sizeof(Expression));
-    
-    return ep;
+    return result;
 }
 
 void *evaluateExpressionAdapter(void *args)
@@ -36,10 +30,13 @@ void *evaluateExpressionAdapter(void *args)
     Expression *result = ((Expression **)args)[5];
 
     Expression *temp = evaluateExpression(expr);
+
+    // rwlock in write mode.
+    SemaphoreWait(readLock);
     SemaphoreWait(writeLock);
     strcpy(result->value, temp->value);
-    SemaphoreSignal(readLock);
     SemaphoreSignal(writeLock);
+    SemaphoreSignal(readLock);
 
     SemaphoreSignal(done);
 }
@@ -64,7 +61,12 @@ Expression *evaluateConcurrentAnd(Expression *exprs[], int n)
     for (int i = 0; i < n; i++)
     {
         SemaphoreWait(done);
-        if (strcmp(result->value, "false")) return result;
+        // rwlock in read mode. 
+        SemaphoreWait(writeLock);
+        SemaphoreWait(readLock);
+        if (strcmp(result->value, "false") == 0) return result;
+        SemaphoreSignal(readLock);
+        SemaphoreSignal(writeLock);
     }
 
     return result;
@@ -73,5 +75,11 @@ Expression *evaluateConcurrentAnd(Expression *exprs[], int n)
 int main(int argc, char **argv)
 {
     InitThreadPackage(false);
+
+    Expression *result = evaluateConcurrentAnd(NULL, 4);
+    printf("result is: %s \n", result->value);
+    free(result);
+
+    FreeThreadPackage();
     return 0; 
 }
