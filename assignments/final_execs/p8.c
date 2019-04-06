@@ -28,23 +28,35 @@ Expression *evaluateExpression(Expression *expr)
 
 void *evaluateExpressionAdapter(void *args)
 {
-    const char *debugName = NULL;
-    Expression *e = NULL;
+    const char *debugName = ((char **)args)[0];
+    Expression *expr = ((Expression **)args)[1];
+    Semaphore writeLock = ((Semaphore *)args)[2];
+    Semaphore readLock = ((Semaphore *)args)[3];
+    Semaphore done = ((Semaphore *)args)[4];
+    Expression *result = ((Expression **)args)[5];
 
-    Expression *result = evaluateExpression(e);
+    Expression *temp = evaluateExpression(expr);
+    SemaphoreWait(writeLock);
+    strcpy(result->value, temp->value);
+    SemaphoreSignal(readLock);
+    SemaphoreSignal(writeLock);
+
+    SemaphoreSignal(done);
 }
 
 Expression *evaluateConcurrentAnd(Expression *exprs[], int n)
 {
-    Expression *e = (Expression *)malloc(sizeof(Expression));
-    e->type = Boolean;
-    strcpy(e->value, "true");
-    Semaphore resultLock = SemaphoreNew("resultLock", 1);
+    Semaphore writeLock = SemaphoreNew("writeLock", 1);
+    Semaphore readLock = SemaphoreNew("readLock", 1);
     Semaphore done = SemaphoreNew("done", 0);
+
+    Expression *result = (Expression *)malloc(sizeof(Expression));
+    result->type = Boolean;
+    strcpy(result->value, "true");
 
     for (int i = 0; i < n; i++) 
     {
-        ThreadNew("evaluateExpression", evaluateExpressionAdapter, 1, exprs[i]);
+        ThreadNew("evaluateExpression", evaluateExpressionAdapter, 5, exprs[i], writeLock, readLock, done, result);
     }
 
     RunAllThreads();
@@ -52,10 +64,10 @@ Expression *evaluateConcurrentAnd(Expression *exprs[], int n)
     for (int i = 0; i < n; i++)
     {
         SemaphoreWait(done);
-        if (strcmp(e->value, "false")) return e;
+        if (strcmp(result->value, "false")) return result;
     }
 
-    return NULL;
+    return result;
 }
 
 int main(int argc, char **argv)
