@@ -30,11 +30,13 @@ void *evaluateExpressionAdapter(void *args)
     Expression *result = ((Expression **)args)[5];
 
     Expression *temp = evaluateExpression(expr);
+    // printf("%s\n", temp->value);
 
     // rwlock in write mode.
     SemaphoreWait(readLock);
     SemaphoreWait(writeLock);
     strcpy(result->value, temp->value);
+    free(temp);
     SemaphoreSignal(writeLock);
     SemaphoreSignal(readLock);
 
@@ -76,7 +78,22 @@ int main(int argc, char **argv)
 {
     InitThreadPackage(false);
 
-    Expression *result = evaluateConcurrentAnd(NULL, 4);
+    Expression *exprs[4];
+    for (int i = 0; i < 3; i++)
+    {
+        Expression expr = {
+            .type = Boolean,
+            .value = "true"
+        };
+        exprs[i] = &expr;
+    }
+    Expression expr = {
+        .type = Boolean,
+        .value = "true"
+    };
+    exprs[3] = &expr;
+
+    Expression *result = evaluateConcurrentAnd(exprs, 4);
     printf("result is: %s \n", result->value);
     free(result);
 
