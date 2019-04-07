@@ -15,7 +15,7 @@ Expression *evaluateExpression(Expression *expr)
 {
     Expression *result = (Expression *)malloc(sizeof(Expression));
     result->type = Boolean;
-    stpcpy(result->value, "true");
+    stpcpy(result->value, expr->value);
 
     return result;
 }
@@ -24,29 +24,24 @@ void *evaluateExpressionAdapter(void *args)
 {
     const char *debugName = ((char **)args)[0];
     Expression *expr = ((Expression **)args)[1];
-    Semaphore writeLock = ((Semaphore *)args)[2];
-    Semaphore readLock = ((Semaphore *)args)[3];
-    Semaphore done = ((Semaphore *)args)[4];
-    Expression *result = ((Expression **)args)[5];
+    Semaphore rwLock = ((Semaphore *)args)[2];
+    Semaphore done = ((Semaphore *)args)[3];
+    Expression *result = ((Expression **)args)[4];
 
     Expression *temp = evaluateExpression(expr);
-    // printf("%s\n", temp->value);
 
     // rwlock in write mode.
-    SemaphoreWait(readLock);
-    SemaphoreWait(writeLock);
+    SemaphoreWait(rwLock);
     strcpy(result->value, temp->value);
     free(temp);
-    SemaphoreSignal(writeLock);
-    SemaphoreSignal(readLock);
+    SemaphoreSignal(rwLock);
 
     SemaphoreSignal(done);
 }
 
 Expression *evaluateConcurrentAnd(Expression *exprs[], int n)
 {
-    Semaphore writeLock = SemaphoreNew("writeLock", 1);
-    Semaphore readLock = SemaphoreNew("readLock", 1);
+    Semaphore rwLock = SemaphoreNew("rwLock", 1);
     Semaphore done = SemaphoreNew("done", 0);
 
     Expression *result = (Expression *)malloc(sizeof(Expression));
@@ -55,7 +50,7 @@ Expression *evaluateConcurrentAnd(Expression *exprs[], int n)
 
     for (int i = 0; i < n; i++) 
     {
-        ThreadNew("evaluateExpression", evaluateExpressionAdapter, 5, exprs[i], writeLock, readLock, done, result);
+        ThreadNew("evaluateExpression", evaluateExpressionAdapter, 4, exprs[i], rwLock, done, result);
     }
 
     RunAllThreads();
@@ -64,11 +59,9 @@ Expression *evaluateConcurrentAnd(Expression *exprs[], int n)
     {
         SemaphoreWait(done);
         // rwlock in read mode. 
-        SemaphoreWait(writeLock);
-        SemaphoreWait(readLock);
+        SemaphoreWait(rwLock);
         if (strcmp(result->value, "false") == 0) return result;
-        SemaphoreSignal(readLock);
-        SemaphoreSignal(writeLock);
+        SemaphoreSignal(rwLock);
     }
 
     return result;
@@ -89,7 +82,7 @@ int main(int argc, char **argv)
     }
     Expression expr = {
         .type = Boolean,
-        .value = "true"
+        .value = "false"
     };
     exprs[3] = &expr;
 
